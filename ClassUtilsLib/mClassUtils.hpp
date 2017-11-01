@@ -36,8 +36,14 @@
 /*         DESTRUCTOR          */
 /*******************************/
 
-#define VirtualDestructor(className)\
+#define VirtualDestructorDefinition(className)\
     virtual ~className();
+
+#define VirtualDestructorDeclaration(className)\
+    virtual ~className() {}
+
+#define VirtualDestructor(className) \
+    VirtualDestructorDeclaration(className)
 
 /*******************************/
 /*        CONSTRUCTOR          */
