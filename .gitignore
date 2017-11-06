@@ -5,7 +5,7 @@
 
 #Specific
 .vscode/
-./Tests/[Bb]uild/
+Tests/[Bb]uild/
 
 # User-specific files
 *.suo
