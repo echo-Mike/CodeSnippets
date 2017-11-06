@@ -34,43 +34,21 @@
 **/
 //STD
 #include <exception>
+#include <utility>
 //SNIPPETS
 #include <ClassUtilsLib/mClassUtils.hpp>
 //#include <DebugLib/mDebugLib.hpp>
 
 namespace Patterns {
 
-    // template < typename InterfaceT >
-    // class PipelineIteratorInterface {
-    // public:
-    //     virtual PipelineIteratorInterface& operator++() = 0;
-    //     virtual PipelineIteratorInterface& operator++(int) = 0;
-    //     virtual PipelineIteratorInterface& operator--() = 0;
-    //     virtual PipelineIteratorInterface& operator--(int) = 0;
-    //     virtual InterfaceT& operator*() const = 0;
-    //     virtual InterfaceT* operator->() const = 0;
-    //     friend void swap(PipelineIteratorInterface& lhs, PipelineIteratorInterface& rhs);
-    //     friend bool operator==(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
-    //     friend bool operator!=(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
-    // };
-
     template < typename T >
     class PipelineContainerInterface {
     public:
-        //using iterator = PipelineIteratorInterface<typename T::Interface> *;
-        //using const_iterator = const PipelineIteratorInterface<typename T::Interface> *;
-
         virtual void push_back(T*) = 0;
         virtual T* pop_back() = 0;
         virtual void push_front(T*) = 0;
         virtual T* pop_front(T*&) = 0;
         virtual T* clear() = 0;
-
-        // virtual iterator begin() = 0;
-        // virtual const_iterator cbegin() = 0;
-        // virtual iterator end() = 0;
-        // virtual const_iterator cend() = 0;
-
     };
 
     template < typename InterfaceT > class Pipeline;
@@ -79,10 +57,8 @@ namespace Patterns {
     template < typename InterfaceT >
     class PipelineEntry : 
         public InterfaceT,
-        //public PipelineIteratorInterface<InterfaceT>,
         public PipelineContainerInterface<PipelineEntry<InterfaceT>>
     {
-        //template < typename T >
         friend class Pipeline<InterfaceT>;
         friend class PipelineIterator<InterfaceT>;
 
@@ -141,7 +117,7 @@ namespace Patterns {
             return const_cast<PipelineEntry*>(this);
         }
 
-    public:
+    public: /// Implementation of entry interface
         using Interface = InterfaceT;
 
         PipelineEntry() : tail(nullptr), head(nullptr) {}
@@ -245,16 +221,12 @@ namespace Patterns {
         EntryType* operator->() const { return ptr; }
 
         operator bool() const { return static_cast<bool>(ptr); }
-        
-        //friend void swap(PipelineIterator& lhs, PipelineIterator& rhs);
 
-        friend bool operator==(const PipelineIterator& lhs, const PipelineIterator& rhs) {
-            return lhs.ptr == rhs.ptr;
-        }
+        friend void swap(PipelineIterator& lhs, PipelineIterator& rhs) { std::swap(lhs.ptr, rhs.ptr); }
 
-        friend bool operator!=(const PipelineIterator& lhs, const PipelineIterator& rhs) {
-            return !(lhs == rhs);
-        }
+        friend bool operator==(const PipelineIterator& lhs, const PipelineIterator& rhs) { return lhs.ptr == rhs.ptr; }
+
+        friend bool operator!=(const PipelineIterator& lhs, const PipelineIterator& rhs) { return !(lhs == rhs); }
     };
 
     template < typename InterfaceT >
@@ -272,7 +244,7 @@ namespace Patterns {
 
         Pipeline() : head(nullptr) {}
 
-        ~Pipeline() { clear(head); }
+        ~Pipeline() noexcept { clear(head); }
 
         void push_back(EntryType* newTail) override final {
             if (head)
@@ -307,7 +279,7 @@ namespace Patterns {
                 return nullptr;
         }
 
-        void clear(Pipeline* = nullptr) { clear(head); }
+        void clear(Pipeline*) { clear(head); }
         
         bool empty() { return static_cast<bool>(head); }
 
@@ -315,9 +287,9 @@ namespace Patterns {
 
         const iterator cbegin() { return iterator{ head }; }
 
-        iterator end() { return iterator{ nullptr }; }
+        iterator end() { return iterator(); }
 
-        const iterator cend() { return iterator{ nullptr }; }
+        const iterator cend() { return iterator(); }
 
     private:
 
