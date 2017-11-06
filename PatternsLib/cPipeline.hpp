@@ -32,110 +32,119 @@
 *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 *   SOFTWARE.
 **/
+//STD
+#include <exception>
+//SNIPPETS
 #include <ClassUtilsLib/mClassUtils.hpp>
+//#include <DebugLib/mDebugLib.hpp>
 
 namespace Patterns {
 
-    template < typename InterfaceT >
-    class PipelineIteratorInterface {
-    public:
-        virtual PipelineIteratorInterface& operator++() = 0;
-        virtual PipelineIteratorInterface& operator++(int) = 0;
-        virtual PipelineIteratorInterface& operator--() = 0;
-        virtual PipelineIteratorInterface& operator--(int) = 0;
-        virtual InterfaceT& operator*() const = 0;
-        virtual InterfaceT* operator->() const = 0;
-        friend void swap(PipelineIteratorInterface& lhs, PipelineIteratorInterface& rhs);
-        friend bool operator==(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
-        friend bool operator!=(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
-    };
+    // template < typename InterfaceT >
+    // class PipelineIteratorInterface {
+    // public:
+    //     virtual PipelineIteratorInterface& operator++() = 0;
+    //     virtual PipelineIteratorInterface& operator++(int) = 0;
+    //     virtual PipelineIteratorInterface& operator--() = 0;
+    //     virtual PipelineIteratorInterface& operator--(int) = 0;
+    //     virtual InterfaceT& operator*() const = 0;
+    //     virtual InterfaceT* operator->() const = 0;
+    //     friend void swap(PipelineIteratorInterface& lhs, PipelineIteratorInterface& rhs);
+    //     friend bool operator==(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
+    //     friend bool operator!=(const PipelineIteratorInterface& lhs, const PipelineIteratorInterface& rhs);
+    // };
 
     template < typename T >
     class PipelineContainerInterface {
     public:
-        using iterator = PipelineIteratorInterface<typename T::Interface> *;
-        using const_iterator = const PipelineIteratorInterface<typename T::Interface> *;
+        //using iterator = PipelineIteratorInterface<typename T::Interface> *;
+        //using const_iterator = const PipelineIteratorInterface<typename T::Interface> *;
 
         virtual void push_back(T*) = 0;
         virtual T* pop_back() = 0;
         virtual void push_front(T*) = 0;
         virtual T* pop_front(T*&) = 0;
         virtual T* clear() = 0;
-        virtual iterator begin() = 0;
-        virtual const_iterator cbegin() = 0;
-        virtual iterator end() = 0;
-        virtual const_iterator cend() = 0;
+
+        // virtual iterator begin() = 0;
+        // virtual const_iterator cbegin() = 0;
+        // virtual iterator end() = 0;
+        // virtual const_iterator cend() = 0;
 
     };
 
-    class Pipeline;
+    template < typename InterfaceT > class Pipeline;
+    template < typename InterfaceT > class PipelineIterator;
 
     template < typename InterfaceT >
     class PipelineEntry : 
-        public InterfaceT, 
-        public PipelineContainerInterface<PipelineEntry>, 
-        public PipelineIteratorInterface<InterfaceT>
+        public InterfaceT,
+        //public PipelineIteratorInterface<InterfaceT>,
+        public PipelineContainerInterface<PipelineEntry<InterfaceT>>
     {
-        friend class Pipeline;
+        //template < typename T >
+        friend class Pipeline<InterfaceT>;
+        friend class PipelineIterator<InterfaceT>;
+
+        using ContainerInterfcae = PipelineContainerInterface<PipelineEntry>;
 
         PipelineEntry* tail;
         const PipelineEntry* head;
 
-        inline void setTail(const PipelineEntry* tail_) { next = const_cast<PipelineEntry*>(tail_); }
+        inline void setTail(const PipelineEntry* tail_) { tail = const_cast<PipelineEntry*>(tail_); }
 
         inline void setHead(const PipelineEntry* head_) { head = const_cast<PipelineEntry*>(head_); }
 
-    protected:
-    /// Implementation of container interface
-
-    void push_back(PipelineEntry* newTail) override final {
-        if (tail)
-            static_cast<PipelineContainerInterface*>(tail)->push_back(newBack);
-        else {
-            tail = newBack;
-            (*tail).setHead(this); 
-        }
-    }
-
-    PipelineEntry* pop_back() override final {
-        if (tail) {
-            auto result = static_cast<PipelineContainerInterface*>(tail)->pop_back();
-            if (result == tail) tail == nullptr;
-            return result;
-        } else
-            return const_cast<PipelineEntry*>(this);
-    }
-
-    void push_front(PipelineEntry* newHead) override final {
-        if (head)
-            static_cast<PipelineContainerInterface*>(head)->push_front(newHead);
-        else {
-            head = newHead;
-            (*head).setTail(this); 
-        }
-    }
-
-    PipelineEntry* pop_front(PipelineEntry* &newFront) override final {
-        if (head) {
-            auto result = static_cast<PipelineContainerInterface*>(head)->pop_front(newFront);
-            if (result == head) {
-                head = nullptr;
-                newFront = const_cast<PipelineEntry*>(this);
+    protected: /// Implementation of container interface
+        
+        void push_back(PipelineEntry* newTail) override final {
+            if (tail)
+                dynamic_cast<ContainerInterfcae*>(tail)->push_back(newTail);
+            else {
+                tail = newTail;
+                (*tail).setHead(this); 
             }
-            return result;
-        } else 
-            return const_cast<PipelineEntry*>(this);
-    }
+        }
 
-    PipelineEntry* clear() override final {
-        if (tail) delete (*tail).clear();
-        return const_cast<PipelineEntry*>(this);
-    }
+        PipelineEntry* pop_back() override final {
+            if (tail) {
+                auto result = dynamic_cast<ContainerInterfcae*>(tail)->pop_back();
+                if (result == tail) tail = nullptr;
+                return result;
+            } else
+                return const_cast<PipelineEntry*>(this);
+        }
+
+        void push_front(PipelineEntry* newHead) override final {
+            if (head)
+                dynamic_cast<ContainerInterfcae*>(const_cast<PipelineEntry*>(head))->push_front(newHead);
+            else {
+                head = newHead;
+                (*const_cast<PipelineEntry*>(head)).setTail(this); 
+            }
+        }
+
+        PipelineEntry* pop_front(PipelineEntry* &newFront) override final {
+            if (head) {
+                auto result = dynamic_cast<ContainerInterfcae*>(const_cast<PipelineEntry*>(head))->pop_front(newFront);
+                if (result == head) {
+                    head = nullptr;
+                    newFront = const_cast<PipelineEntry*>(this);
+                }
+                return result;
+            } else 
+                return const_cast<PipelineEntry*>(this);
+        }
+
+        PipelineEntry* clear() override final {
+            if (tail) delete dynamic_cast<ContainerInterfcae*>(tail)->clear();
+            return const_cast<PipelineEntry*>(this);
+        }
 
     public:
         using Interface = InterfaceT;
 
-        PipelineEntry() : next(nullptr), owner(nullptr) {}
+        PipelineEntry() : tail(nullptr), head(nullptr) {}
 
         virtual ~PipelineEntry() {}
 
@@ -167,30 +176,168 @@ namespace Patterns {
             return *this;
         }
 
-        inline Interface* getNext() { return static_cast<Interface*>(next); }
+        inline Interface* getTail() { return dynamic_cast<Interface*>(tail); }
 
-        inline bool hasNext() { return static_cast<bool>(next); }
+        inline bool hasTail() { return static_cast<bool>(tail); }
 
-        inline Interface* getOwner() { return static_cast<Interface*>(owner); }
+        inline Interface* getHead() { return dynamic_cast<Interface*>(head); }
 
-        inline bool hasOwner() { return static_cast<bool>(owner); }
+        inline bool hasHead() { return static_cast<bool>(head); }
 
-    protected:
+    //protected:
 
-        inline iterator begin() override final { 
-            return head ? static_cast<PipelineContainerInterface*>(head)->begin() : static_cast<iterator>(this);
-        }
+        // inline iterator begin() override final { 
+        //     return head ? static_cast<PipelineContainerInterface*>(head)->begin() : static_cast<iterator>(this);
+        // }
 
-        inline const_iterator cbegin() override final { 
-            return head ? static_cast<PipelineContainerInterface*>(head)->cbegin() : static_cast<const_iterator>(this);
-        }
+        // inline const_iterator cbegin() override final { 
+        //     return head ? static_cast<PipelineContainerInterface*>(head)->cbegin() : static_cast<const_iterator>(this);
+        // }
 
-        inline iterator end() override final { return nullptr; }
+        // inline iterator end() override final { return nullptr; }
 
-        inline const_iterator cend() override final { return nullptr; }
+        // inline const_iterator cend() override final { return nullptr; }
 
     };
-}
 
+    template < typename InterfaceT > 
+    class PipelineIterator 
+    {
+    public:
+        using Interface = InterfaceT;
+        using EntryType = PipelineEntry<Interface>;
+    private:
+        EntryType* ptr;
+    public:
+        PipelineIterator() : ptr(nullptr) {}
+
+        PipelineIterator(const EntryType* ptr_) : ptr(const_cast<EntryType*>(ptr_)) {}
+
+        PipelineIterator(const PipelineIterator& other) : ptr(other.ptr) {}
+
+        PipelineIterator& operator=(const PipelineIterator& other) {
+            ptr = other.ptr;
+            return *this;
+        }
+
+        PipelineIterator& operator++() {
+            ptr = (ptr && ptr->hasTail()) ? ptr->tail : nullptr;
+            return *this;
+        }
+
+        PipelineIterator operator++(int) {
+            PipelineIterator old{ this };
+            const_cast<PipelineIterator*>(this)->operator++();
+            return old;
+        }
+
+        PipelineIterator& operator--() {
+            ptr = (ptr && ptr->hasHead()) ? ptr->head : nullptr;
+            return *this;
+        }
+
+        PipelineIterator& operator--(int) {
+            PipelineIterator old{ this };
+            const_cast<PipelineIterator*>(this)->operator--();
+            return old;
+        }
+
+        EntryType* operator->() const { return ptr; }
+
+        operator bool() const { return static_cast<bool>(ptr); }
+        
+        //friend void swap(PipelineIterator& lhs, PipelineIterator& rhs);
+
+        friend bool operator==(const PipelineIterator& lhs, const PipelineIterator& rhs) {
+            return lhs.ptr == rhs.ptr;
+        }
+
+        friend bool operator!=(const PipelineIterator& lhs, const PipelineIterator& rhs) {
+            return !(lhs == rhs);
+        }
+    };
+
+    template < typename InterfaceT >
+    class Pipeline : 
+        public PipelineContainerInterface<PipelineEntry<InterfaceT>> 
+    {
+    public:
+        using Interface = InterfaceT;
+        using EntryType = PipelineEntry<Interface>;
+        using iterator = PipelineIterator<Interface>;
+    private:
+        EntryType* head;
+        using EntryContainerInterface = PipelineContainerInterface<EntryType>;
+    public:
+
+        Pipeline() : head(nullptr) {}
+
+        ~Pipeline() { clear(head); }
+
+        void push_back(EntryType* newTail) override final {
+            if (head)
+                static_cast<EntryContainerInterface*>(head)->push_back(newTail);
+            else
+                head = newTail;
+        }
+
+        EntryType* pop_back() override final {
+            if (head) {
+                auto result = dynamic_cast<EntryContainerInterface*>(head)->pop_back();
+                if (result == head) head = nullptr;
+                return result;
+            } else
+                return nullptr;
+        }
+
+        void push_front(EntryType* newHead) override final {
+            if (head)
+                dynamic_cast<EntryContainerInterface*>(head)->push_front(newHead);
+            else
+                head = newHead;
+        }
+
+        EntryType* pop_front() {
+            if (head) {
+                EntryType* newFront = nullptr;
+                auto result = dynamic_cast<EntryContainerInterface*>(head)->pop_front(newFront);
+                head = newFront;
+                return result;
+            } else
+                return nullptr;
+        }
+
+        void clear(Pipeline* = nullptr) { clear(head); }
+        
+        bool empty() { return static_cast<bool>(head); }
+
+        iterator begin() { return iterator{ head }; }
+
+        const iterator cbegin() { return iterator{ head }; }
+
+        iterator end() { return iterator{ nullptr }; }
+
+        const iterator cend() { return iterator{ nullptr }; }
+
+    private:
+
+        static void clear(EntryType* ptr_) noexcept 
+        {
+            try {
+                if (ptr_) delete dynamic_cast<EntryContainerInterface*>(ptr_)->clear(); 
+            }
+            catch(std::exception& e) {
+                //TODO: add debug_out msg
+            }
+            catch(...) {
+                //TODO: add debug_out msg
+            }
+        }
+
+        EntryType* clear() override final { return nullptr; }
+
+        EntryType* pop_front(EntryType* &/*newFront*/) override final { return nullptr; }
+    };
+}
 
 #endif
