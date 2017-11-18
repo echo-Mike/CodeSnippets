@@ -35,281 +35,679 @@
 //STD
 #include <exception>
 #include <utility>
+#include <iterator>
 //SNIPPETS
 #include <ClassUtilsLib/mClassUtils.hpp>
 //#include <DebugLib/mDebugLib.hpp>
 
 namespace Patterns {
 
-    template < typename T >
-    class PipelineContainerInterface {
-    public:
-        virtual void push_back(T*) = 0;
-        virtual T* pop_back() = 0;
-        virtual void push_front(T*) = 0;
-        virtual T* pop_front(T*&) = 0;
-        virtual T* clear() = 0;
-    };
-
-    template < typename InterfaceT > class Pipeline;
-    template < typename InterfaceT > class PipelineIterator;
-
     template < typename InterfaceT >
-    class PipelineEntry : 
-        public InterfaceT,
-        public PipelineContainerInterface<PipelineEntry<InterfaceT>>
+    class Pipeline
     {
-        friend class Pipeline<InterfaceT>;
-        friend class PipelineIterator<InterfaceT>;
+    public:
+        class PipelineEntry;
+ 
+        class iterator
+        {
+        public:
+            using Interface = InterfaceT;
 
-        using ContainerInterfcae = PipelineContainerInterface<PipelineEntry>;
+            using value_type = PipelineEntry;
 
-        PipelineEntry* tail;
-        const PipelineEntry* head;
+            using pointer = value_type*;
 
-        inline void setTail(const PipelineEntry* tail_) { tail = const_cast<PipelineEntry*>(tail_); }
+            using reference = value_type&;
 
-        inline void setHead(const PipelineEntry* head_) { head = const_cast<PipelineEntry*>(head_); }
+            using iterator_category = std::bidirectional_iterator_tag;
 
-    protected: /// Implementation of container interface
-        
-        void push_back(PipelineEntry* newTail) override final {
-            if (tail)
-                dynamic_cast<ContainerInterfcae*>(tail)->push_back(newTail);
-            else {
-                tail = newTail;
-                (*tail).setHead(this); 
+            using difference_type = std::ptrdiff_t;
+
+            iterator() : current(nullptr), last(nullptr) {}
+
+            iterator(const iterator&) = default;
+
+            iterator& operator=(const iterator&) = default;
+
+            explicit iterator(const value_type* ptr) : 
+                current(const_cast<pointer>(ptr)),
+                last(nullptr) 
+            {}
+
+            ~iterator() = default;
+
+            iterator& operator++() {
+                if (current) last = current;
+                current = (current && current->hasTail()) ? current->tail : nullptr;
+                return *this;
             }
-        }
 
-        PipelineEntry* pop_back() override final {
-            if (tail) {
-                auto result = dynamic_cast<ContainerInterfcae*>(tail)->pop_back();
-                if (result == tail) tail = nullptr;
-                return result;
-            } else
-                return const_cast<PipelineEntry*>(this);
-        }
-
-        void push_front(PipelineEntry* newHead) override final {
-            if (head)
-                dynamic_cast<ContainerInterfcae*>(const_cast<PipelineEntry*>(head))->push_front(newHead);
-            else {
-                head = newHead;
-                (*const_cast<PipelineEntry*>(head)).setTail(this); 
+            iterator operator++(int) {
+                iterator old{ this };
+                const_cast<iterator*>(this)->operator++();
+                return old;
             }
-        }
 
-        PipelineEntry* pop_front(PipelineEntry* &newFront) override final {
-            if (head) {
-                auto result = dynamic_cast<ContainerInterfcae*>(const_cast<PipelineEntry*>(head))->pop_front(newFront);
-                if (result == head) {
-                    head = nullptr;
-                    newFront = const_cast<PipelineEntry*>(this);
+            iterator& operator--() {
+                if (current) {
+                    last = current;
+                    current = current->hasHead() ? current->head : nullptr;
+                } else if (last) {
+                    current = last;
+                    last = nullptr;
                 }
+                return *this;
+            }
+
+            iterator operator--(int) {
+                iterator old{ this };
+                const_cast<iterator*>(this)->operator--();
+                return old;
+            }
+
+            pointer operator->() const { return current; }
+
+            reference operator*() const { return *current; }
+
+            friend void swap(iterator& lhs, iterator& rhs) 
+            { 
+                std::swap(lhs.current, rhs.current);
+                std::swap(lhs.last, rhs.last);
+            }
+            
+            friend inline bool operator==(const iterator& lhs, const iterator& rhs) 
+            { return lhs.current == rhs.current; } //&& lhs.last == rhs.last; }
+        
+            friend bool operator!=(const iterator& lhs, const iterator& rhs) { return !(lhs == rhs); }
+
+            operator bool() const { return static_cast<bool>(current); }
+
+        protected:
+
+            static iterator makeEnd(const value_type* ptr) 
+            {
+                iterator result;
+                result.last = const_cast<pointer>(ptr);
                 return result;
-            } else 
+            }
+
+        private:
+			friend Pipeline;
+            pointer current;
+            pointer last;
+        };
+
+        class const_iterator
+        {
+        public:
+            using Interface = InterfaceT;
+
+            using value_type = PipelineEntry;
+
+            using pointer = const value_type*;
+
+            using reference = const value_type&;
+
+            using iterator_category = std::bidirectional_iterator_tag;
+
+            using difference_type = std::ptrdiff_t;
+
+            const_iterator() : current(nullptr), last(nullptr) {}
+
+            const_iterator(const const_iterator&) = default;
+
+            const_iterator& operator=(const const_iterator&) = default;
+
+            const_iterator(const iterator& other) :
+                current(other.current), last(other.last)
+            {}
+            
+            const_iterator& operator=(const iterator& other) 
+            {
+                current = other.current;
+                last = other.last;
+            }
+            
+            explicit const_iterator(pointer ptr) : 
+                current(ptr), last(nullptr) 
+            {}
+
+            ~const_iterator() = default;
+
+            const_iterator& operator++() {
+                if (current) last = current;
+                current = (current && current->hasTail()) ? current->tail : nullptr;
+                return *this;
+            }
+
+            const_iterator operator++(int) {
+                const_iterator old{ this };
+                const_cast<const_iterator*>(this)->operator++();
+                return old;
+            }
+
+            const_iterator& operator--() {
+                if (current) {
+                    last = current;
+                    current = current->hasHead() ? current->head : nullptr;
+                } else if (last) {
+                    current = last;
+                    last = nullptr;
+                }
+                return *this;
+            }
+
+            const_iterator operator--(int) {
+                const_iterator old{ this };
+                const_cast<const_iterator*>(this)->operator--();
+                return old;
+            }
+
+            pointer operator->() const { return current; }
+            
+            reference operator*() const { return *current; }
+
+            friend void swap(const_iterator& lhs, const_iterator& rhs) 
+            { 
+                std::swap(lhs.current, rhs.current);
+                std::swap(lhs.last, rhs.last);
+            }
+            
+            friend inline bool operator==(const const_iterator& lhs, const const_iterator& rhs)
+            { return lhs.current == rhs.current; }// && lhs.last == rhs.last; }
+        
+            friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs) { return !(lhs == rhs); }
+
+            operator bool() const { return static_cast<bool>(current); }
+        
+        protected:
+
+            static const_iterator makeEnd(const value_type* ptr) 
+            {
+                const_iterator result;
+                result.last = ptr;
+                return result;
+            }
+
+        private:
+			friend Pipeline;
+            pointer current;
+            pointer last;
+        };
+
+        class PipelineEntry :
+            public InterfaceT
+        {
+        public:
+            using Interface = InterfaceT;
+
+            PipelineEntry() : tail(nullptr), head(nullptr) {}
+            
+            virtual ~PipelineEntry() {}
+
+            PipelineEntry(const PipelineEntry&) = delete;
+
+            PipelineEntry& operator=(const PipelineEntry&) = delete;
+
+            PipelineEntry(PipelineEntry&& other) :
+                head(other.head), tail(other.tail)
+            {
+                other.head = nullptr;
+                other.tail = nullptr;
+                if (head) head->tail = const_cast<PipelineEntry*>(this);
+                if (tail) tail->head = const_cast<PipelineEntry*>(this);
+            }
+        
+            PipelineEntry& operator=(PipelineEntry&& other)
+            {
+                if (this == &other) return *this;
+                if (head) head->tail = tail;
+                if (tail) tail->head = head;
+                head = other.head;
+                tail = other.tail;
+                other.head = nullptr;
+                other.tail = nullptr;
+                if (head) head->tail = const_cast<PipelineEntry*>(this);
+                if (tail) tail->head = const_cast<PipelineEntry*>(this);
+                return *this;
+            }
+
+            inline Interface* getTail() const { return dynamic_cast<Interface*>(tail); }
+            
+            inline bool hasTail() const { return static_cast<bool>(tail); }
+        
+            inline Interface* getHead() const { return dynamic_cast<Interface*>(head); }
+        
+            inline bool hasHead() const { return static_cast<bool>(head); }
+
+            inline Interface* getThis() const { return dynamic_cast<Interface*>(const_cast<PipelineEntry*>(this)); }
+
+        protected:
+            using size_type = std::size_t;
+
+            bool connected(PipelineEntry* other) 
+            {
+                if (tail == other)
+                    return true;
+                else
+                    return tail ? tail->connected(other) : false;
+            }
+
+            void push_back(PipelineEntry* newTail) 
+            {
+                if (tail)
+                    tail->push_back(newTail);
+                else {
+                    tail = newTail;
+                    tail->head = const_cast<PipelineEntry*>(this);
+                }
+            }
+
+            PipelineEntry* pop_back()
+            {
+                if (tail)
+                    return tail->pop_back();
+                else {
+                    const_cast<PipelineEntry*>(head)->tail = nullptr;
+                    head = nullptr;
+                    return const_cast<PipelineEntry*>(this);
+                }
+            }
+        
+            void push_front(PipelineEntry* newHead)
+            {
+                if (head)
+                    const_cast<PipelineEntry*>(head)->push_front(newHead);
+                else {
+                    head = newHead;
+                    const_cast<PipelineEntry*>(head)->tail = const_cast<PipelineEntry*>(this);
+                }
+            }
+        
+            PipelineEntry* pop_front(PipelineEntry* &newFront)
+            {
+                if (head)
+                    return const_cast<PipelineEntry*>(head)->pop_front(newFront);
+                else {
+                    newFront = tail;
+                    tail->head = nullptr;
+                    tail = nullptr;
+                    return const_cast<PipelineEntry*>(this);
+                }
+            }
+        
+            PipelineEntry* clear()
+            {
+                if (tail) delete tail->clear();
                 return const_cast<PipelineEntry*>(this);
-        }
+            }
 
-        PipelineEntry* clear() override final {
-            if (tail) delete dynamic_cast<ContainerInterfcae*>(tail)->clear();
-            return const_cast<PipelineEntry*>(this);
-        }
+            PipelineEntry& back()
+            {
+                return tail ? tail->back() : *const_cast<PipelineEntry*>(this);
+            }
 
-    public: /// Implementation of entry interface
+            PipelineEntry* end()
+            {
+                return tail ? tail->end() : const_cast<PipelineEntry*>(this);
+            }
+
+            size_type size()
+            {
+                return tail ? tail->size() + 1 : 1;
+            }
+
+            void insert(PipelineEntry* value) 
+            {
+                if (head) const_cast<PipelineEntry*>(head)->tail = value;
+                value->tail = const_cast<PipelineEntry*>(this);
+                if (head) value->head = head;
+                head = value;
+            }
+
+        private:
+			friend Pipeline;
+            PipelineEntry* tail;
+            PipelineEntry* head;
+        };
+
         using Interface = InterfaceT;
+        using InterfacePtr = Interface*;
+        using InterfaceRef = Interface&;
 
-        PipelineEntry() : tail(nullptr), head(nullptr) {}
+        using value_type = PipelineEntry;
 
-        virtual ~PipelineEntry() {}
+        using size_type = typename value_type::size_type;
 
-        NotCopyConstructible(PipelineEntry)
+        //using reverse_iterator = std::reverse_iterator<iterator>;
+        //using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        NotCopyAssignable(PipelineEntry)
+        using difference_type = typename std::iterator_traits<iterator>::difference_type;
 
-        PipelineEntry(PipelineEntry&& other) :
-            head(other.head),
-            tail(other.tail)
+        using reference = value_type&;
+        using const_reference = const value_type&;
+        using pointer = value_type*;
+        using const_pointer = const value_type*;
+
+        Pipeline() : head(nullptr), tail(nullptr) {}
+
+        ~Pipeline() noexcept { /*setHead();*/ clear(head); }
+
+        // Element access
+
+        reference front() { setHead(); return *head; }
+
+        const_reference front() const { return *head; }
+
+        reference back() { setTail(); return *tail; }
+
+        const_reference back() const { return *tail; }
+
+        // Iterators
+
+        iterator begin() noexcept { setHead(); return iterator{ head }; }
+        
+        const_iterator begin() const noexcept { return const_iterator{ head }; }
+
+        const_iterator cbegin() const noexcept { return const_iterator{ head }; }
+
+        iterator end() noexcept { setTail(); return iterator::makeEnd(tail); }
+
+        const_iterator end() const noexcept { return iterator::makeEnd(tail); }
+
+        const_iterator cend() const noexcept { return iterator::makeEnd(tail); }
+
+        // Capacity
+        
+        size_type size() const noexcept 
         {
-            other.head = nullptr;
-            other.tail = nullptr;
-            if (head) (*head).setTail(this);
-            if (tail) (*tail).setHead(this);
+            if (!head) return 0;
+            auto iter = begin();
+            auto endIter = end();
+            size_type result = 0;
+            while(iter != endIter) 
+            {
+                result += 1;
+                ++iter;
+            }
         }
 
-        PipelineEntry& operator=(PipelineEntry&& other)
+        bool empty() const noexcept { return !(static_cast<bool>(head) || static_cast<bool>(tail)); }
+
+        // Modifiers
+
+        void clear() noexcept { setHead(); clear(head); head = nullptr; tail = nullptr; }
+
+        void push_back(pointer newBack) noexcept
         {
-            if (this == &other) return *this;
-            if (head) (*head).setTail(tail);
-            if (tail) (*tail).setHead(head);
-            head = other.head;
-            tail = other.tail;
-            other.head = nullptr;
-            other.tail = nullptr;
-            if (head) (*head).setTail(this);
-            if (tail) (*tail).setHead(this);
-            return *this;
+            setTail();
+
+            if (tail) {
+                tail->tail = newBack;
+                newBack->head = tail;
+            } else 
+                head = newBack;
+            tail = newBack;
+        }
+        
+        pointer pop_back() noexcept
+        {
+            setTail();
+
+            if (!tail) return nullptr;
+
+            pointer result = tail;
+            tail = tail->head;
+            tail->tail = nullptr;
+            result->head = nullptr;
+            return result;
         }
 
-        inline Interface* getTail() { return dynamic_cast<Interface*>(tail); }
+        void push_front(pointer newFront) noexcept
+        {
+            setHead();
 
-        inline bool hasTail() { return static_cast<bool>(tail); }
+            if (head) {
+                head->head = newFront;
+                newFront->tail = head;
+            } else 
+                tail = newFront;
+            head = newFront;
+        }
 
-        inline Interface* getHead() { return dynamic_cast<Interface*>(head); }
+        pointer pop_front() noexcept
+        {
+            setHead();
 
-        inline bool hasHead() { return static_cast<bool>(head); }
+            if (!head) return nullptr;
 
-    //protected:
+            pointer result = head;
+            head = head->tail;
+            head->head = nullptr;
+            result->tail = nullptr;
+            return result;
+        }
 
-        // inline iterator begin() override final { 
-        //     return head ? static_cast<PipelineContainerInterface*>(head)->begin() : static_cast<iterator>(this);
-        // }
+        iterator insert(const_iterator pos, pointer value)
+        {
+            if (value->head) {
+                value->head->tail = value->tail;
+                value->head = nullptr;
+            }
+            if (value->tail) {
+                value->tail->head = value->head;
+                value->tail = nullptr;
+            }
 
-        // inline const_iterator cbegin() override final { 
-        //     return head ? static_cast<PipelineContainerInterface*>(head)->cbegin() : static_cast<const_iterator>(this);
-        // }
+            if (pos.current) {
+                if (const_cast<pointer>(pos.current) == head) 
+                    push_front(value);
+                else if (const_cast<pointer>(pos.current) == tail) 
+                    push_back(value);
+                else {
+                    auto ptr_ = const_cast<pointer>(pos.current);
+                    value->head = ptr_->head;
+                    ptr_->head->tail = value;
+                    prt_->head = value;
+                    value->tail = ptr_;
+                }
+            } else if (pos.last) {
+                auto ptr_ = const_cast<pointer>(pos.current);
+                ptr_->tail = value;
+                value->head = ptr_;
+            } else
+                push_back(value);
 
-        // inline iterator end() override final { return nullptr; }
+            return iterator{ value }; 
+        }
 
-        // inline const_iterator cend() override final { return nullptr; }
+        template< class EntryT,  class... Args > 
+        iterator emplace( const_iterator pos, Args&&... args )
+        {
+            //todo: add concepts: 1. Constuctiable 2. is_base_of
+            pointer buffer = nullptr;
+            try {
+                buffer = new EntryT(std::forward<Args>(args)...);
+            }
+            catch (...) {
+                //todo: add debug msg
+                return end();
+            }
+            return insert(pos, buffer);
+        }
 
-    };
+        iterator erase( const_iterator pos )
+        {
+            setHead();
+            setTail();
+            iterator result = end();
+            if (!pos.current) return result;
+            result.last = nullptr;
+            auto obj = const_cast<pointer>(pos.current);
+            if (obj == head) {
+                try { delete pop_front(); }
+                catch(...) { 
+                    //todo: add dbg msg 
+                }
+                result.current = head
+                return result;
+            }
+            if (obj == tail) {
+                try { delete pop_back(); }
+                catch(...) {
+                    //todo: add dbg msg 
+                }
+                result.current = tail
+                return result;
+            }
 
-    template < typename InterfaceT > 
-    class PipelineIterator 
-    {
-    public:
-        using Interface = InterfaceT;
-        using EntryType = PipelineEntry<Interface>;
+            if (obj->head)
+                obj->head->tail = obj->tail;
+            else {
+                //todo: add dbg msg
+                result.current = obj
+                return result;
+            }
+
+            if (obj->tail) 
+                obj->tail->head = obj->head;
+            else {
+                //todo: add dbg msg
+                result.current = obj
+                return result;
+            }
+
+            result.current = obj->tail;
+            try { delete obj; }
+            catch(...) { 
+                //todo: add dbg msg 
+            }
+            return result;
+        }
+
+        iterator erase( const_iterator first, const_iterator last ) 
+        {
+            if (first == last || !first.current) return end();
+            setHead();
+            setTail();
+
+            if (last.current) {
+                auto firstObj = const_cast<pointer>(first.current);
+                auto lastObj = const_cast<pointer>(last.current);
+                pointer beforeLastObj = firstObj;
+                while (beforeLastObj->tail != lastObj) {
+                    if (beforeLastObj->tail)
+                        beforeLastObj = beforeLastObj->tail;
+                    else
+                        return end();
+                }
+
+                beforeLastObj->tail = nullptr;
+
+                if (firstObj == head) {
+                    head = lastObj;
+                    lastObj->head = nullptr;
+                } else if (firstObj->head) {
+                    firstObj->head->tail = lastObj;
+                    lastObj->head = firstObj->head;
+                } else {
+                    beforeLastObj->tail = lastObj;
+                    return end();
+                }
+
+                clear(firstObj);
+                return iterator{ lastObj };
+            } else {
+                auto obj = const_cast<pointer>(first.current);
+
+                if (obj == head) clear();
+
+                if (obj == tail) {
+                    try { delete pop_back(); }
+                    catch(...) {
+                        //todo: add dbg msg 
+                    }
+                    return end();
+                }
+
+                if (obj->head) {
+                    obj->head->tail = nullptr;
+                    tail = obj->head;
+                } else {
+                    //todo: add dbg msg
+                    return end();
+                }
+
+                clear(obj);
+                return end();
+            }
+        }
+
+        template< class EntryT, class... Args >
+        reference emplace_back( Args&&... args )
+        {
+            return *emplace<EntryT, Args...>(end(), std::forward<Args>(args)...);
+        }
+
+        template< class EntryT, class... Args >
+        reference emplace_front( Args&&... args )
+        {
+            return *emplace<EntryT, Args...>(begin(), std::forward<Args>(args)...);
+        }
+
+        void swap( Pipeline& other ) noexcept { std::swap(head, other.head); std::swap(tail, other.tail); }
+
     private:
-        EntryType* ptr;
-    public:
-        PipelineIterator() : ptr(nullptr) {}
+        pointer head;
+        pointer tail;
 
-        PipelineIterator(const EntryType* ptr_) : ptr(const_cast<EntryType*>(ptr_)) {}
-
-        PipelineIterator(const PipelineIterator& other) : ptr(other.ptr) {}
-
-        PipelineIterator& operator=(const PipelineIterator& other) {
-            ptr = other.ptr;
-            return *this;
+        inline void setHead() noexcept
+        {
+            if (!head)
+                if (tail)
+                    head = tail;
+                else
+                    return;
+            
+            while (head->head)
+                head = head->head;
         }
 
-        PipelineIterator& operator++() {
-            ptr = (ptr && ptr->hasTail()) ? ptr->tail : nullptr;
-            return *this;
+        inline void setTail() noexcept
+        {
+            if (!tail)
+                if (head)
+                    tail = head;
+                else
+                    return;
+            
+            while (tail->tail)
+                tail = tail->tail;
         }
 
-        PipelineIterator operator++(int) {
-            PipelineIterator old{ this };
-            const_cast<PipelineIterator*>(this)->operator++();
-            return old;
+        static void clear(pointer ptr_) noexcept 
+        {
+            pointer next = nullptr;
+            for(;;) {
+                if (ptr_) next = ptr_->tail;
+                try { delete ptr_; }
+                catch(std::exception& e) {
+                    //TODO: add debug_out msg
+                }
+                catch(...) {
+                    //TODO: add debug_out msg
+                }
+                if (next)
+                    ptr_ = next;
+                else
+                    break;
+            }
         }
-
-        PipelineIterator& operator--() {
-            ptr = (ptr && ptr->hasHead()) ? ptr->head : nullptr;
-            return *this;
-        }
-
-        PipelineIterator& operator--(int) {
-            PipelineIterator old{ this };
-            const_cast<PipelineIterator*>(this)->operator--();
-            return old;
-        }
-
-        EntryType* operator->() const { return ptr; }
-
-        operator bool() const { return static_cast<bool>(ptr); }
-
-        friend void swap(PipelineIterator& lhs, PipelineIterator& rhs) { std::swap(lhs.ptr, rhs.ptr); }
-
-        friend bool operator==(const PipelineIterator& lhs, const PipelineIterator& rhs) { return lhs.ptr == rhs.ptr; }
-
-        friend bool operator!=(const PipelineIterator& lhs, const PipelineIterator& rhs) { return !(lhs == rhs); }
     };
 
     template < typename InterfaceT >
-    class Pipeline : 
-        public PipelineContainerInterface<PipelineEntry<InterfaceT>> 
-    {
-    public:
-        using Interface = InterfaceT;
-        using EntryType = PipelineEntry<Interface>;
-        using iterator = PipelineIterator<Interface>;
-    private:
-        EntryType* head;
-        using EntryContainerInterface = PipelineContainerInterface<EntryType>;
-    public:
+    using PipelineEntry = typename Pipeline<InterfaceT>::PipelineEntry;
 
-        Pipeline() : head(nullptr) {}
-
-        ~Pipeline() noexcept { clear(head); }
-
-        void push_back(EntryType* newTail) override final {
-            if (head)
-                static_cast<EntryContainerInterface*>(head)->push_back(newTail);
-            else
-                head = newTail;
-        }
-
-        EntryType* pop_back() override final {
-            if (head) {
-                auto result = dynamic_cast<EntryContainerInterface*>(head)->pop_back();
-                if (result == head) head = nullptr;
-                return result;
-            } else
-                return nullptr;
-        }
-
-        void push_front(EntryType* newHead) override final {
-            if (head)
-                dynamic_cast<EntryContainerInterface*>(head)->push_front(newHead);
-            else
-                head = newHead;
-        }
-
-        EntryType* pop_front() {
-            if (head) {
-                EntryType* newFront = nullptr;
-                auto result = dynamic_cast<EntryContainerInterface*>(head)->pop_front(newFront);
-                head = newFront;
-                return result;
-            } else
-                return nullptr;
-        }
-
-        void clear(Pipeline*) { clear(head); }
-        
-        bool empty() { return static_cast<bool>(head); }
-
-        iterator begin() { return iterator{ head }; }
-
-        const iterator cbegin() { return iterator{ head }; }
-
-        iterator end() { return iterator(); }
-
-        const iterator cend() { return iterator(); }
-
-    private:
-
-        static void clear(EntryType* ptr_) noexcept 
-        {
-            try {
-                if (ptr_) delete dynamic_cast<EntryContainerInterface*>(ptr_)->clear(); 
-            }
-            catch(std::exception& e) {
-                //TODO: add debug_out msg
-            }
-            catch(...) {
-                //TODO: add debug_out msg
-            }
-        }
-
-        EntryType* clear() override final { return nullptr; }
-
-        EntryType* pop_front(EntryType* &/*newFront*/) override final { return nullptr; }
-    };
 }
 
 #endif
