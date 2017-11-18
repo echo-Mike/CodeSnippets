@@ -421,15 +421,20 @@ namespace Patterns {
         
         size_type size() const noexcept 
         {
+            // setHead();
+            // setTail();
             if (!head) return 0;
-            auto iter = begin();
-            auto endIter = end();
-            size_type result = 0;
-            while(iter != endIter) 
-            {
-                result += 1;
-                ++iter;
+            auto first = head;
+            auto last = tail;
+            size_type result = 1;
+            while ( first != last ) {
+                if (first->tail) {
+                    ++result;
+                    first = first->tail;
+                } else
+                    return static_cast<size_type>(-1);
             }
+            return result;
         }
 
         bool empty() const noexcept { return !(static_cast<bool>(head) || static_cast<bool>(tail)); }
