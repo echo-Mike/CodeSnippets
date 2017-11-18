@@ -37,7 +37,7 @@
 #include <utility>
 #include <iterator>
 //SNIPPETS
-#include <ClassUtilsLib/mClassUtils.hpp>
+//#include <ClassUtilsLib/mClassUtils.hpp>
 //#include <DebugLib/mDebugLib.hpp>
 
 namespace Patterns {
@@ -282,89 +282,6 @@ namespace Patterns {
 
             inline Interface* getThis() const { return dynamic_cast<Interface*>(const_cast<PipelineEntry*>(this)); }
 
-        protected:
-            using size_type = std::size_t;
-
-            bool connected(PipelineEntry* other) 
-            {
-                if (tail == other)
-                    return true;
-                else
-                    return tail ? tail->connected(other) : false;
-            }
-
-            void push_back(PipelineEntry* newTail) 
-            {
-                if (tail)
-                    tail->push_back(newTail);
-                else {
-                    tail = newTail;
-                    tail->head = const_cast<PipelineEntry*>(this);
-                }
-            }
-
-            PipelineEntry* pop_back()
-            {
-                if (tail)
-                    return tail->pop_back();
-                else {
-                    const_cast<PipelineEntry*>(head)->tail = nullptr;
-                    head = nullptr;
-                    return const_cast<PipelineEntry*>(this);
-                }
-            }
-        
-            void push_front(PipelineEntry* newHead)
-            {
-                if (head)
-                    const_cast<PipelineEntry*>(head)->push_front(newHead);
-                else {
-                    head = newHead;
-                    const_cast<PipelineEntry*>(head)->tail = const_cast<PipelineEntry*>(this);
-                }
-            }
-        
-            PipelineEntry* pop_front(PipelineEntry* &newFront)
-            {
-                if (head)
-                    return const_cast<PipelineEntry*>(head)->pop_front(newFront);
-                else {
-                    newFront = tail;
-                    tail->head = nullptr;
-                    tail = nullptr;
-                    return const_cast<PipelineEntry*>(this);
-                }
-            }
-        
-            PipelineEntry* clear()
-            {
-                if (tail) delete tail->clear();
-                return const_cast<PipelineEntry*>(this);
-            }
-
-            PipelineEntry& back()
-            {
-                return tail ? tail->back() : *const_cast<PipelineEntry*>(this);
-            }
-
-            PipelineEntry* end()
-            {
-                return tail ? tail->end() : const_cast<PipelineEntry*>(this);
-            }
-
-            size_type size()
-            {
-                return tail ? tail->size() + 1 : 1;
-            }
-
-            void insert(PipelineEntry* value) 
-            {
-                if (head) const_cast<PipelineEntry*>(head)->tail = value;
-                value->tail = const_cast<PipelineEntry*>(this);
-                if (head) value->head = head;
-                head = value;
-            }
-
         private:
 			friend Pipeline;
             PipelineEntry* tail;
@@ -377,7 +294,7 @@ namespace Patterns {
 
         using value_type = PipelineEntry;
 
-        using size_type = typename value_type::size_type;
+        using size_type = std::size_t;
 
         //using reverse_iterator = std::reverse_iterator<iterator>;
         //using const_reverse_iterator = std::reverse_iterator<const_iterator>;
