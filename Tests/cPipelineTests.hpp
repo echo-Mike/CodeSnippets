@@ -9,7 +9,6 @@ public:
     virtual T get() = 0;
     virtual void set(T) = 0;
 };
-
 class A : public PipelineEntry<Interface<int>> {
     int value = 0;
 public:

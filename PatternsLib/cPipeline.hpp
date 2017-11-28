@@ -38,6 +38,8 @@
 #include <stdexcept>
 #include <utility>
 #include <iterator>
+#include <type_traits>
+#include <initializer_list>
 //SNIPPETS
 //#include <ClassUtilsLib/mClassUtils.hpp>
 //#include <DebugLib/mDebugLib.hpp>
@@ -380,7 +382,7 @@ namespace Patterns {
 
             /**
             *   @brief Proper move constructor.
-            *   Handels the tail and head chains properly.
+            *   Handles the tail and head chains properly.
             **/
             PipelineEntry(PipelineEntry&& other) :
                 head(other.head), tail(other.tail)
@@ -393,7 +395,7 @@ namespace Patterns {
 
             /**
             *   @brief Proper move assignment operator.
-            *   Handels the tail and head chains properly.
+            *   Handles the tail and head chains properly.
             **/
             PipelineEntry& operator=(PipelineEntry&& other)
             {
@@ -473,13 +475,88 @@ namespace Patterns {
         Pipeline() : head(nullptr), tail(nullptr) {}
 
         /**
+        *   @brief Initializer list constructor.
+        *   Used to construct const pipeline objects.\n
+        *   If one or more pointers in l is nullptr construction does not occur.
+        *   @param l Initializer list of pointers to pipeline entries.
+        **/
+        Pipeline(std::initializer_list<pointer> l) : 
+            head(nullptr), tail(nullptr)
+        {
+            for (auto v : l) // Case when one of pointers are nullptr
+                if (!(*v)) return;
+            
+            if ( l.size() > 0 ) {
+                head = const_cast<pointer>(*l.begin());
+                head->head = nullptr;
+                head->tail = nullptr;
+                if ( l.size() == 1 ) // Case when Pipeline{ptr_}
+                    tail = head;
+                else { // Case when Pipeline{ptr_1, ptr_2, ... , ptr_n}
+                    auto startIter = ++l.begin(); // Next element past begin
+                    auto endIter = --l.end(); // Last element in list
+                    pointer last = head;
+                    for (auto iter = startIter; iter != endIter; ++iter)
+                    { // Building head and tail chains
+                        last->tail = const_cast<pointer>(*iter); 
+                        const_cast<pointer>(*iter)->head = last;
+                        last = const_cast<pointer>(*iter);
+                    }
+                    tail = const_cast<pointer>(*endIter);
+                    tail->head = last;
+                    last->tail = tail;
+                }
+            }
+        }
+
+        /**
+        *   @brief Deleted copy constructor.
+        *   Pipeline is not copyable by polymothic nature of PipelineEntry.
+        **/
+        Pipeline(const Pipeline&) = delete;
+
+        /**
+        *   @brief Deleted copy assignment operator.
+        *   Pipeline is not copyable by polymothic nature of PipelineEntry.
+        **/
+        Pipeline& operator=(const Pipeline&) = delete;
+
+        /**
+        *   @brief Proper move constructor.
+        *   Handles the tail and head properly.
+        **/
+        Pipeline(Pipeline&& other) :
+            head(other.head), tail(other.tail)
+        {
+            other.head = nullptr;
+            other.tail = nullptr;
+        }
+
+        /**
+        *   @brief Proper move assignment operator.
+        *   Handles the tail and head properly.
+        **/
+        Pipeline& operator=(Pipeline&& other)
+        {
+            if (this == &other) return *this;
+            head = other.head;
+            tail = other.tail;
+            other.head = nullptr;
+            other.tail = nullptr;
+            return *this;
+        }
+
+        /**
         *   @brief Default destructor.
         *   Deallocates memory used by elements of pipeline.
         **/
         ~Pipeline() noexcept { /*setHead();*/ clear(head); }
 
-        // Element access
-
+        /**
+        *   @name Element access methods.
+        **/
+        //@{
+        
         /**
         *   @brief Returns a reference to the first element in the container.
         *   Calling front on an empty container is undefined.\n
@@ -515,8 +592,13 @@ namespace Patterns {
         *   @complexity Constant.
         **/
         const_reference back() const { return *tail; }
+        
+        //@}
 
-        // Iterators
+        /**
+        *   @name Iterator access methods.
+        **/
+        //@{
 
         /**
         *   @brief Returns an iterator to the first element of the container.
@@ -570,7 +652,12 @@ namespace Patterns {
         **/
         const_iterator cend() const noexcept { return iterator::makeEnd(tail); }
 
-        // Capacity
+        //@}
+
+        /**
+        *   @name Capacity methods.
+        **/
+        //@{
 
         /**
         *   @brief Returns the number of elements in the container. 
@@ -601,8 +688,13 @@ namespace Patterns {
         *   @complexity Constant.
         **/
         bool empty() const noexcept { return !(static_cast<bool>(head) || static_cast<bool>(tail)); }
+        
+        //@}
 
-        // Modifiers
+        /**
+        *   @name Container content modification methods.
+        **/
+        //@{
 
         /**
         *   @brief Removes all elements from the container.
@@ -758,13 +850,15 @@ namespace Patterns {
         *   @param args Arguments to be forwarded to constructor.
         *   @return Iterator pointing to the emplaced element, or end() if construction of value throwed exception.
         *   @complexity Linear in size of uncounted front and back elements or constant.
-        *   @todo Add concepts: 1. Constuctiable 2. is_base_of
         *   @todo Add debug msg
         **/
         template< class EntryT,  class... Args > 
         iterator emplace( const_iterator pos, Args&&... args )
         {
-            //todo: add concepts: 1. Constuctiable 2. is_base_of
+            static_assert(  std::is_base_of<value_type, EntryT>::value,
+                            "STATIC_ARREST::cPipeline::emplace::Provided type EntryT is not derived from value_type of container.")
+            static_assert(  std::is_constructible<EntryT, Args...>::value, 
+                            "STATIC_ARREST::cPipeline::emplace::Provided type EntryT is not constructible from provided Args.");
             pointer buffer = nullptr;
             try {
                 buffer = new EntryT(std::forward<Args>(args)...);
@@ -925,6 +1019,10 @@ namespace Patterns {
         template< class EntryT, class... Args >
         reference emplace_back( Args&&... args )
         {
+            static_assert(  std::is_base_of<value_type, EntryT>::value,
+                            "STATIC_ARREST::cPipeline::emplace_back::Provided type EntryT is not derived from value_type of container.")
+            static_assert(  std::is_constructible<EntryT, Args...>::value, 
+                            "STATIC_ARREST::cPipeline::emplace_back::Provided type EntryT is not constructible from provided Args.");
             auto result = emplace<EntryT, Args...>(end(), std::forward<Args>(args)...);
             if (result.current)
                 return *result;
@@ -946,13 +1044,17 @@ namespace Patterns {
         template< class EntryT, class... Args >
         reference emplace_front( Args&&... args )
         {
+            static_assert(  std::is_base_of<value_type, EntryT>::value,
+                            "STATIC_ARREST::cPipeline::emplace_front::Provided type EntryT is not derived from value_type of container.")
+            static_assert(  std::is_constructible<EntryT, Args...>::value, 
+                            "STATIC_ARREST::cPipeline::emplace_front::Provided type EntryT is not constructible from provided Args.");
             auto result = emplace<EntryT, Args...>(begin(), std::forward<Args>(args)...);
             if (result.current)
                 return *result;
             else
                 throw std::runtime_error("Pipeline::emplace_front::Can't construct new element.");
         }
-
+        
         /**
         *   @brief Exchanges the contents of the container with those of other.
         *   Does not invoke any move, copy, or swap operations on individual elements.\n
@@ -963,6 +1065,7 @@ namespace Patterns {
         **/
         void swap( Pipeline& other ) noexcept { std::swap(head, other.head); std::swap(tail, other.tail); }
 
+        //@}
     private:
         pointer head;   //!< Pointer to head of container
         pointer tail;   //!< Pointer to tail of container
@@ -1031,7 +1134,11 @@ namespace Patterns {
     };
 
     /**
-    *   Spesial type to be used in derive expression for classes of pipeline.
+    *   Special type to be used in derive expression for classes of pipeline.
+    *   Example:
+    *   @code
+    *   class WorkingClass : public PipelineEntry<SomeInterface> { ... }
+    *   @endcode
     **/
     template < typename InterfaceT >
     using PipelineEntry = typename Pipeline<InterfaceT>::PipelineEntry;
