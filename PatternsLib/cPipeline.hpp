@@ -40,9 +40,6 @@
 #include <iterator>
 #include <type_traits>
 #include <initializer_list>
-//SNIPPETS
-//#include <ClassUtilsLib/mClassUtils.hpp>
-//#include <DebugLib/mDebugLib.hpp>
 
 namespace Patterns {
 
@@ -340,7 +337,6 @@ namespace Patterns {
                 result.last = ptr;
                 return result;
             }
-
         private:
 			friend Pipeline;
             pointer current;    //!< Pointer to current element.
@@ -354,7 +350,7 @@ namespace Patterns {
             public InterfaceT // Publicly derived from interface
         {
         public:
-            using Interface = InterfaceT; // Type of interface.
+            using Interface = InterfaceT; //!< Type of interface.
 
             /**
             *   @brief Default constructor.
@@ -490,7 +486,7 @@ namespace Patterns {
                 head = const_cast<pointer>(*l.begin());
                 head->head = nullptr;
                 head->tail = nullptr;
-                if ( l.size() == 1 ) // Case when Pipeline{ptr_}
+                if ( l.size() == 1 ) // Case when Pipeline{ptr_} // No other constructor is provided
                     tail = head;
                 else { // Case when Pipeline{ptr_1, ptr_2, ... , ptr_n}
                     auto startIter = ++l.begin(); // Next element past begin
@@ -505,6 +501,7 @@ namespace Patterns {
                     tail = const_cast<pointer>(*endIter);
                     tail->head = last;
                     last->tail = tail;
+                    tail->tail = nullptr;
                 }
             }
         }
@@ -666,13 +663,11 @@ namespace Patterns {
         **/
         size_type size() const noexcept 
         {
-            // setHead();
-            // setTail();
             if (!head) return 0;
             auto first = head;
-            auto last = tail;
             size_type result = 1;
-            while ( first != last ) {
+            while ( first != tail ) 
+            {
                 if (first->tail) {
                     ++result;
                     first = first->tail;
@@ -802,24 +797,20 @@ namespace Patterns {
         iterator insert(const_iterator pos, pointer value)
         {
             // Inserted value cleanup
-            if (value->head) {
-                value->head->tail = value->tail;
-                value->head = nullptr;
-            }
-            if (value->tail) {
-                value->tail->head = value->head;
-                value->tail = nullptr;
-            }
+            if (value->head) value->head->tail = value->tail;
+            if (value->tail) value->tail->head = value->head;
+            value->head = nullptr;
+            value->tail = nullptr;
             // Set real head element
             setHead();
             // Set real tail element
             setTail();
             if (pos.current) { // Case when pos is valid iterator to some element 
-                if (const_cast<pointer>(pos.current) == head) // Case of head element
+                if (const_cast<pointer>(pos.current) == head) {// Case of head element
                     push_front(value);
-                else if (const_cast<pointer>(pos.current) == tail) // Case of tail element
-                    push_back(value);
-                else { // Case of intermidiate element
+                /*else if (const_cast<pointer>(pos.current) == tail) // Case of tail element
+                    push_back(value); */ // Invalid logic: Insertion operation must insert before element. So tail case is same as intermidiate.
+                } else { // Case of intermidiate element
                     auto ptr_ = const_cast<pointer>(pos.current);
                     value->head = ptr_->head;
                     ptr_->head->tail = value;
@@ -827,7 +818,7 @@ namespace Patterns {
                     value->tail = ptr_;
                 }
             } else if (pos.last) { // Case when pos is end() iterator
-                auto ptr_ = const_cast<pointer>(pos.current);
+                auto ptr_ = const_cast<pointer>(pos.last);
                 if (ptr_->tail) { // Case when pos is not proper end() iterator
                     ptr_->tail->head = value;
                     value->tail = ptr_->tail;
@@ -910,7 +901,7 @@ namespace Patterns {
             // Case of pos is some intermidiate element
             if (obj->head)
                 obj->head->tail = obj->tail;
-            else { // pos is not a proper element 
+            else { // pos is not a proper element : head chain is broken
                 //todo: add dbg msg
                 result.current = obj
                 return result; // Return iterator to pos
@@ -918,13 +909,15 @@ namespace Patterns {
 
             if (obj->tail) 
                 obj->tail->head = obj->head;
-            else { // pos is not a proper element 
+            else { // pos is not a proper element : tail chain is broken
                 //todo: add dbg msg
                 result.current = obj
                 return result; // Return iterator to pos
             }
 
             result.current = obj->tail;
+            obj->head = nullptr;
+            obj->tail = nullptr;
             try { delete obj; }
             catch(...) { 
                 //todo: add dbg msg 
@@ -957,7 +950,8 @@ namespace Patterns {
                 auto lastObj = const_cast<pointer>(last.current);
                 pointer beforeLastObj = firstObj;
                 // Check that first and last is connected via tail chain
-                while (beforeLastObj->tail != lastObj) {
+                while (beforeLastObj->tail != lastObj) 
+                {
                     if (beforeLastObj->tail)
                         beforeLastObj = beforeLastObj->tail;
                     else
@@ -1116,7 +1110,7 @@ namespace Patterns {
         static void clear(pointer ptr_) noexcept 
         {
             pointer next = nullptr;
-            for(;;) {
+            for(;;) { // (;;) Looks like a pretty vampire
                 if (ptr_) next = ptr_->tail;
                 try { delete ptr_; }
                 catch(std::exception& e) {
