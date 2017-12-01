@@ -814,7 +814,7 @@ namespace Patterns {
                     auto ptr_ = const_cast<pointer>(pos.current);
                     value->head = ptr_->head;
                     ptr_->head->tail = value;
-                    prt_->head = value;
+                    ptr_->head = value;
                     value->tail = ptr_;
                 }
             } else if (pos.last) { // Case when pos is end() iterator
@@ -847,7 +847,7 @@ namespace Patterns {
         iterator emplace( const_iterator pos, Args&&... args )
         {
             static_assert(  std::is_base_of<value_type, EntryT>::value,
-                            "STATIC_ARREST::cPipeline::emplace::Provided type EntryT is not derived from value_type of container.")
+                            "STATIC_ARREST::cPipeline::emplace::Provided type EntryT is not derived from value_type of container.");
             static_assert(  std::is_constructible<EntryT, Args...>::value, 
                             "STATIC_ARREST::cPipeline::emplace::Provided type EntryT is not constructible from provided Args.");
             pointer buffer = nullptr;
@@ -887,7 +887,7 @@ namespace Patterns {
                 catch(...) { 
                     //todo: add dbg msg 
                 }
-                result.current = head
+                result.current = head;
                 return result;
             }
             if (obj == tail) { // Case of pos == --end()
@@ -903,7 +903,7 @@ namespace Patterns {
                 obj->head->tail = obj->tail;
             else { // pos is not a proper element : head chain is broken
                 //todo: add dbg msg
-                result.current = obj
+                result.current = obj;
                 return result; // Return iterator to pos
             }
 
@@ -911,7 +911,7 @@ namespace Patterns {
                 obj->tail->head = obj->head;
             else { // pos is not a proper element : tail chain is broken
                 //todo: add dbg msg
-                result.current = obj
+                result.current = obj;
                 return result; // Return iterator to pos
             }
 
@@ -1014,7 +1014,7 @@ namespace Patterns {
         reference emplace_back( Args&&... args )
         {
             static_assert(  std::is_base_of<value_type, EntryT>::value,
-                            "STATIC_ARREST::cPipeline::emplace_back::Provided type EntryT is not derived from value_type of container.")
+                            "STATIC_ARREST::cPipeline::emplace_back::Provided type EntryT is not derived from value_type of container.");
             static_assert(  std::is_constructible<EntryT, Args...>::value, 
                             "STATIC_ARREST::cPipeline::emplace_back::Provided type EntryT is not constructible from provided Args.");
             auto result = emplace<EntryT, Args...>(end(), std::forward<Args>(args)...);
@@ -1039,7 +1039,7 @@ namespace Patterns {
         reference emplace_front( Args&&... args )
         {
             static_assert(  std::is_base_of<value_type, EntryT>::value,
-                            "STATIC_ARREST::cPipeline::emplace_front::Provided type EntryT is not derived from value_type of container.")
+                            "STATIC_ARREST::cPipeline::emplace_front::Provided type EntryT is not derived from value_type of container.");
             static_assert(  std::is_constructible<EntryT, Args...>::value, 
                             "STATIC_ARREST::cPipeline::emplace_front::Provided type EntryT is not constructible from provided Args.");
             auto result = emplace<EntryT, Args...>(begin(), std::forward<Args>(args)...);
@@ -1071,12 +1071,12 @@ namespace Patterns {
         **/
         inline void setHead() noexcept
         {
-            if (!head) // If head is not a valid pointer
+            if (!head) { // If head is not a valid pointer
                 if (tail) // If tail is valid pointer -> setup head = tail
                     head = tail;
                 else
                     return; // Container is empty
-            
+            }
             while (head->head) // Iterate over head chain while there is a link
                 head = head->head;
         }
@@ -1088,12 +1088,12 @@ namespace Patterns {
         **/
         inline void setTail() noexcept
         {
-            if (!tail) // If tail is not a valid pointer
+            if (!tail) { // If tail is not a valid pointer
                 if (head) // If head is valid pointer -> setup tail = head
                     tail = head;
                 else
-                    return;
-            
+                    return; // Container is empty
+            }
             while (tail->tail) // Iterate over tail chain while there is a link
                 tail = tail->tail;
         }

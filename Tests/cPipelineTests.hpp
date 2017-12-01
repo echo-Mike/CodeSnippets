@@ -47,9 +47,9 @@ public:
     void set(int newValue) { v1 = newValue; }
 };
 
-template <typename T1, typename T2>
+template <typename T1, typename... Args>
 bool foo(bool dummy)
 {
-    CONCEPT_IS_BASE_OF(T1, T2)
+    CONCEPT_FORWARD_CONSTRUCTIBLE(T1, Args...)
     return dummy;
 }
