@@ -1,6 +1,6 @@
 #include <iostream>
 #include <PatternsLib/cPipeline.hpp>
-
+#include <ConceptsLib/mConcepts.hpp>
 using namespace Patterns;
 
 template < typename T >
@@ -46,3 +46,10 @@ public:
     int get() { return v1; }
     void set(int newValue) { v1 = newValue; }
 };
+
+template <typename T1, typename T2>
+bool foo(bool dummy)
+{
+    CONCEPT_IS_BASE_OF(T1, T2)
+    return dummy;
+}

@@ -11,14 +11,48 @@
 **/
 #include <type_traits>
 
+#ifndef CONCEPT_ERROR_PREFIX
+	#define CONCEPT_ERROR_PREFIX "CONCEPT_VIOLATION::"
+#endif
+
+#define GET_MACRO_2(_1,_2,NAME...) NAME
+#define GET_MACRO_3(_1,_2,_3,NAME...) NAME
+#define GET_MACRO_4(_1,_2,_3,_4,NAME...) NAME
+#define GET_MACRO_5(_1,_2,_3,_4,_5,NAME...) NAME
+#define GET_MACRO_6(_1,_2,_3,_4,_5,_6,NAME...) NAME
+#define GET_MACRO_7(_1,_2,_3,_4,_5,_6,_7,NAME...) NAME
+#define GET_MACRO_8(_1,_2,_3,_4,_5,_6,_7,_8,NAME...) NAME
+#define GET_MACRO_9(_1,_2,_3,_4,_5,_6,_7,_8,_9,NAME...) NAME
+#define GET_MACRO_10(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,NAME...) NAME
+#define GET_MACRO_11(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,NAME...) NAME
+#define GET_MACRO_12(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,NAME...) NAME
+#define GET_MACRO_13(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,NAME...) NAME
+#define GET_MACRO_14(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,NAME...) NAME
+#define GET_MACRO_15(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,NAME...) NAME
+#define GET_MACRO_16(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,NAME...) NAME
+
 //Create type by removing cv- and ref/pointer qualifiers from type '_Type', returns new type on it place.
 #define CONCEPT_CLEAR_TYPE_T(_Type) std::remove_pointer_t<std::decay_t<_Type>>
 //Create '_new' type by removing cv- and ref/pointer qualifiers from type '_old'.
-#define CONCEPT_CLEAR_TYPE(_old, _new)	using _new = CONCEPT_CLEAR_TYPE_T(_old); \
-										static_assert(!std::is_pointer<_new>::value, "ASSERTION_ERROR::CONCEPTS::Type clear failure. Generated type is a pointer.");
+#define CONCEPT_CLEAR_TYPE(_old, _new)	\
+using _new = CONCEPT_CLEAR_TYPE_T(_old); \
+static_assert( \
+	!std::is_pointer<_new>::value, \
+	CONCEPT_ERROR_PREFIX "CONCEPTS::Type clear failure. Generated type is a pointer type." \
+);
 
 //Check that provided type '_der' is derived from '_base'.
-#define CONCEPT_DERIVED(_der, _base, _msg) static_assert(std::is_base_of<_base, _der>::value, _msg);
+#define CONCEPT_IS_BASE_OF_UDM(_base, _der, _msg)\
+static_assert(\
+	std::is_base_of<_base, _der>::value, \
+	_msg \
+);
+#define CONCEPT_IS_BASE_OF_AGM(_base, _der)\
+static_assert(\
+	std::is_base_of<_base, _der>::value, \
+	CONCEPT_ERROR_PREFIX __FILE__ "::" #__LINE__ "::" __func__ "::Type \"" #_base "\" is not base type of \"" #_der "\"." \
+);
+#define CONCEPT_IS_BASE_OF(...) GET_MACRO_3(__VA_ARGS__, CONCEPT_IS_BASE_OF_UDM, CONCEPT_IS_BASE_OF_AGM)(__VA_ARGS__)
 
 //Check that provided '_value' is proper rvalue-ref or lvalue-ref of type '_Type' : cv- _Type&& or cv- _Type&.
 #define CONCEPT_UNREF(_Type, _value, _msg) static_assert(	std::is_rvalue_reference<decltype(_value)>::value && std::is_same<_Type, std::remove_reference_t<decltype(_value)>>::value || \
