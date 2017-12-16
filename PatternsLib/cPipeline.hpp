@@ -41,6 +41,28 @@
 #include <type_traits>
 #include <initializer_list>
 
+#ifdef TEST
+#include <cstdio>
+    struct PipelineLoggerSingleton
+    {
+        static std::FILE* getInstance(const char* path)
+        {
+            static PipelineLoggerSingleton s(path);
+            return s.h;
+        }
+    private:
+        std::FILE* h;
+        PipelineLoggerSingleton(const char* path) : h(std::fopen(path,"w+")) {}
+    };
+#endif
+
+#if defined(TEST) && !defined(LOG)
+#define LOG(format, ...) \
+do { \
+	std::fprintf(PipelineLoggerSingleton::getInstance(".\\PipelineTestLog.txt"), "[%-35s: %-25s: line:%-4d] " format "\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__); \
+} while(0);
+#endif
+
 namespace Patterns {
 
     template < typename InterfaceT >
@@ -107,7 +129,7 @@ namespace Patterns {
             *   @brief Post-increment operator.
             **/
             iterator operator++(int) {
-                iterator old{ this };
+                iterator old(*this);
                 const_cast<iterator*>(this)->operator++();
                 return old;
             }
@@ -130,7 +152,7 @@ namespace Patterns {
             *   @brief Post-decrement operator.
             **/
             iterator operator--(int) {
-                iterator old{ this };
+                iterator old(*this);
                 const_cast<iterator*>(this)->operator--();
                 return old;
             }
@@ -262,7 +284,7 @@ namespace Patterns {
             *   @brief Pos-increment operator.
             **/
             const_iterator operator++(int) {
-                const_iterator old{ this };
+                const_iterator old(*this);
                 const_cast<const_iterator*>(this)->operator++();
                 return old;
             }
@@ -285,7 +307,7 @@ namespace Patterns {
             *   @brief Post-decrement operator.
             **/
             const_iterator operator--(int) {
-                const_iterator old{ this };
+                const_iterator old(*this);
                 const_cast<const_iterator*>(this)->operator--();
                 return old;
             }
@@ -480,7 +502,7 @@ namespace Patterns {
             head(nullptr), tail(nullptr)
         {
             for (auto v : l) // Case when one of pointers are nullptr
-                if (!(*v)) return;
+                if (!v) return;
             
             if ( l.size() > 0 ) {
                 head = const_cast<pointer>(*l.begin());
@@ -489,8 +511,10 @@ namespace Patterns {
                 if ( l.size() == 1 ) // Case when Pipeline{ptr_} // No other constructor is provided
                     tail = head;
                 else { // Case when Pipeline{ptr_1, ptr_2, ... , ptr_n}
-                    auto startIter = ++l.begin(); // Next element past begin
-                    auto endIter = --l.end(); // Last element in list
+                    auto startIter = l.begin(); // Next element past begin
+					++startIter;
+                    auto endIter = l.end(); // Last element in list
+					--endIter;
                     pointer last = head;
                     for (auto iter = startIter; iter != endIter; ++iter)
                     { // Building head and tail chains
@@ -639,7 +663,7 @@ namespace Patterns {
         *   @return Const iterator to the element following the last element.
         *   @complexity Constant.
         **/
-        const_iterator end() const noexcept { return iterator::makeEnd(tail); }
+        const_iterator end() const noexcept { return const_iterator::makeEnd(tail); }
 
         /**
         *   @brief Explicit function to obtain a const iterator to the element following the last element of the container.
@@ -647,7 +671,7 @@ namespace Patterns {
         *   @return Const iterator to the element following the last element.
         *   @complexity Constant.
         **/
-        const_iterator cend() const noexcept { return iterator::makeEnd(tail); }
+        const_iterator cend() const noexcept { return const_iterator::makeEnd(tail); }
 
         //@}
 
@@ -737,7 +761,10 @@ namespace Patterns {
             pointer result = tail;
             tail = tail->head;
             // Clear links of returned element
-            tail->tail = nullptr;
+            if (head == result)
+                head = nullptr;
+            else
+                tail->tail = nullptr;
             result->head = nullptr;
             return result;
         }
@@ -779,7 +806,10 @@ namespace Patterns {
             pointer result = head;
             head = head->tail;
             // Clear links of returned element
-            head->head = nullptr;
+            if (tail == result)
+                tail = nullptr;
+            else
+                head->head = nullptr;
             result->tail = nullptr;
             return result;
         }
@@ -822,7 +852,8 @@ namespace Patterns {
                 if (ptr_->tail) { // Case when pos is not proper end() iterator
                     ptr_->tail->head = value;
                     value->tail = ptr_->tail;
-                }
+                } else
+                    tail = value;
                 ptr_->tail = value;
                 value->head = ptr_;
             } else // Case when pos is end() iterator of empty container
@@ -976,7 +1007,10 @@ namespace Patterns {
             } else { // Case when last is end()
                 auto obj = const_cast<pointer>(first.current);
                 // Case when [first; last) == [begin(); end())
-                if (obj == head) clear();
+                if (obj == head) {
+					clear();
+					return end();
+				}
                 // Case when [first; last) == [--end(); end())
                 if (obj == tail) {
                     try { delete pop_back(); }
@@ -1110,9 +1144,17 @@ namespace Patterns {
         static void clear(pointer ptr_) noexcept 
         {
             pointer next = nullptr;
+			#ifdef TEST
+				std::size_t counter = 0;
+			#endif
             for(;;) { // (;;) Looks like a pretty vampire
                 if (ptr_) next = ptr_->tail;
-                try { delete ptr_; }
+                try {
+                    #ifdef TEST
+                    if (ptr_) ++counter;
+                    #endif
+                    delete ptr_;
+                }
                 catch(std::exception& e) {
                     //TODO: add debug_out msg
                 }
@@ -1124,6 +1166,9 @@ namespace Patterns {
                 else
                     break;
             }
+			#ifdef TEST
+				LOG("Objects deleted: %u", counter)
+			#endif
         }
     };
 

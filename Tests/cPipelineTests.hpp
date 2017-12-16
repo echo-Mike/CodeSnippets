@@ -1,4 +1,7 @@
 #include <iostream>
+#include <iterator>
+#include <cstdio>
+#define TEST
 #include <PatternsLib/cPipeline.hpp>
 #include <ConceptsLib/mConcepts.hpp>
 using namespace Patterns;
@@ -13,8 +16,9 @@ public:
 class A : 
     public PipelineEntry<Interface<int>> 
 {
-    int value = 0;
+    int value;
 public:
+    A(int value_ = 0) : value(value_) {}
     int get() { return value; }
     void set(int newValue) { value = newValue; }
 };
@@ -22,8 +26,9 @@ public:
 class B : 
     public PipelineEntry<Interface<int>> 
 {
-    float value = 1;
+    float value;
 public:
+    B(float value_ = 1) : value(value_) {}
     int get() { return value; }
     void set(int newValue) { value = newValue; }
 };
@@ -31,8 +36,9 @@ public:
 class C : 
     public PipelineEntry<Interface<int>>
 {
-    double value = 2;
+    double value;
 public:
+    C(double value_ = 2) : value(value_) {}
     int get() { return value; }
     void set(int newValue) { value = newValue; }
 };
@@ -46,10 +52,3 @@ public:
     int get() { return v1; }
     void set(int newValue) { v1 = newValue; }
 };
-
-template <typename T1, typename... Args>
-bool foo(bool dummy)
-{
-    CONCEPT_FORWARD_CONSTRUCTIBLE(T1, Args...)
-    return dummy;
-}
