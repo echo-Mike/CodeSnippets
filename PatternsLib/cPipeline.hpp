@@ -53,6 +53,11 @@
     private:
         std::FILE* h;
         PipelineLoggerSingleton(const char* path) : h(std::fopen(path,"w+")) {}
+        ~PipelineLoggerSingleton()
+        {
+            std::fflush(h);
+            std::fclose(h);
+        }
     };
 #endif
 
