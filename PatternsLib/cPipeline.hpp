@@ -601,7 +601,7 @@ namespace Patterns {
             if (head) 
                 return *head;
             else
-                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.") 
+                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.");
         }
 
         /**
@@ -617,7 +617,7 @@ namespace Patterns {
             if (head) 
                 return *head;
             else
-                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.") 
+                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.");
         }
 
         /**
@@ -634,7 +634,7 @@ namespace Patterns {
             if (tail) 
                 return *tail;
             else
-                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.") 
+                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.");
         }
 
         /**
@@ -650,7 +650,7 @@ namespace Patterns {
             if (tail) 
                 return *tail;
             else
-                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.") 
+                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.");
         }
 
         //@}
