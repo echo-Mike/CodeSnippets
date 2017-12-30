@@ -35,6 +35,33 @@
 //STD
 #include <cstring>
 
+#ifdef TEST
+    #include <cstdio>
+    struct FArgumentLibLoggerSingleton
+    {
+        static std::FILE* getInstance(const char* path)
+        {
+            static FArgumentLibLoggerSingleton s(path);
+            return s.h;
+        }
+    private:
+        std::FILE* h;
+        FArgumentLibLoggerSingleton(const char* path) : h(std::fopen(path,"w+")) {}
+        ~FArgumentLibLoggerSingleton()
+        {
+            std::fflush(h);
+            std::fclose(h);
+        }
+    };
+#endif
+
+#if defined(TEST) && !defined(LOG)
+#define LOG(format, ...) \
+do { \
+	std::fprintf(FArgumentLibLoggerSingleton::getInstance(".\\fArgumentLibTestLog.txt"), "[%-35s: %-25s: line:%-4d] " format "\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__); \
+} while(0);
+#endif
+
 //Main lib namespace
 namespace Arguments 
 {
@@ -61,7 +88,8 @@ namespace Arguments
     *   @param[in]  arg Pointer to first char of examined null-terminated string.
     *   @return Pointer to first option char in 'arg' or nullptr if not an option/
     **/
-    char* isOption(char* arg) {
+    char* isOption(char* arg)
+    {
         auto size = std::strspn(arg, _optionPrefixes);
         return (size == 0) ? nullptr : arg + size;
     }
@@ -74,13 +102,18 @@ namespace Arguments
     *   @param[in]  start   Position in argument list to start with.
     *   @return Noreturn
     **/
-    void findFlagArg(int argc, char* argv[], Option& opt, int start = 0) {
+    void findFlagArg(int argc, char* argv[], Option& opt, int start = 0) 
+    {
         opt.data = false;
-        if (start >= argc) return;
+        // Flag argument must be at maximum at the end
+        if (start >= argc) 
+            return;
         char* _opt = nullptr;
-        for (auto _index = start; _index < argc; _index++) {
+        for (auto _index = start; _index < argc; ++_index) 
+        {
             _opt = isOption(argv[_index]);
-            if (_opt) {
+            if (_opt) 
+            {
                 if (std::strstr(_opt, opt.shortCommand) != NULL || 
                     !std::strcmp(_opt, opt.longCommand)) 
                 {
@@ -99,11 +132,15 @@ namespace Arguments
     *   @param[in]  start   Position in argument list to start with.
     *   @return Noreturn
     **/
-    void findValueArg(int argc, char* argv[], Option& opt, int start = 0) {
+    void findValueArg(int argc, char* argv[], Option& opt, int start = 0)
+    {
         opt.data = -1;
-        if (start >= argc - 1) return;
+        // Value argument must have one following argument at minimum
+        if (start >= argc - 1) 
+            return;
         char* _opt = nullptr;
-        for (auto _index = start; _index < argc - 1; _index++) {
+        for (auto _index = start; _index < argc - 1; ++_index) 
+        {
             _opt = isOption(argv[_index]);
             if (_opt) {
                 if (!std::strcmp(_opt, opt.shortCommand) || 
@@ -123,7 +160,8 @@ namespace Arguments
     *   @param[in:out]  optv Option list.
     *   @retunr Noreturn
     **/
-    void parseArgs(int argc, char* argv[], Option optv[]) {
+    void parseArgs(int argc, char* argv[], Option optv[]) 
+    {
         int _index = 0;
         while (optv[_index].type != ArgTypes::Null) 
         {
