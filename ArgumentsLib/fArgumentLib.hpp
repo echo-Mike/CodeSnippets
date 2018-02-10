@@ -66,7 +66,7 @@ do { \
 namespace Arguments 
 {
     //Set of possible option prefixes
-    static const char *_optionPrefixes = "-/";
+    static const char *opt_ionPrefixes = "-/";
 
     //Set of types of otions
     enum class ArgTypes : char {
@@ -90,7 +90,7 @@ namespace Arguments
     **/
     char* isOption(char* arg)
     {
-        auto size = std::strspn(arg, _optionPrefixes);
+        auto size = std::strspn(arg, opt_ionPrefixes);
         return (size == 0) ? nullptr : arg + size;
     }
 
@@ -108,14 +108,14 @@ namespace Arguments
         // Flag argument must be at maximum at the end
         if (start >= argc) 
             return;
-        char* _opt = nullptr;
-        for (auto _index = start; _index < argc; ++_index) 
+        char* opt_ = nullptr;
+        for (auto index = start; index < argc; ++index) 
         {
-            _opt = isOption(argv[_index]);
-            if (_opt) 
+            opt_ = isOption(argv[index]);
+            if (opt_) 
             {
-                if (std::strstr(_opt, opt.shortCommand) != NULL || 
-                    !std::strcmp(_opt, opt.longCommand)) 
+                if (std::strstr(opt_, opt.shortCommand) != NULL || 
+                    !std::strcmp(opt_, opt.longCommand)) 
                 {
                     opt.data = true;
                     return;
@@ -138,15 +138,15 @@ namespace Arguments
         // Value argument must have one following argument at minimum
         if (start >= argc - 1) 
             return;
-        char* _opt = nullptr;
-        for (auto _index = start; _index < argc - 1; ++_index) 
+        char* opt_ = nullptr;
+        for (auto index = start; index < argc - 1; ++index) 
         {
-            _opt = isOption(argv[_index]);
-            if (_opt) {
-                if (!std::strcmp(_opt, opt.shortCommand) || 
-                    !std::strcmp(_opt, opt.longCommand)) 
+            opt_ = isOption(argv[index]);
+            if (opt_) {
+                if (!std::strcmp(opt_, opt.shortCommand) || 
+                    !std::strcmp(opt_, opt.longCommand)) 
                 {
-                    opt.data = _index + 1;
+                    opt.data = index + 1;
                     return;
                 }
             }
@@ -162,20 +162,20 @@ namespace Arguments
     **/
     void parseArgs(int argc, char* argv[], Option optv[]) 
     {
-        int _index = 0;
-        while (optv[_index].type != ArgTypes::Null) 
+        int index = 0;
+        while (optv[index].type != ArgTypes::Null) 
         {
-            switch (optv[_index].type) {
+            switch (optv[index].type) {
                 case ArgTypes::Flag:
-                    findFlagArg(argc, argv, optv[_index]);
+                    findFlagArg(argc, argv, optv[index]);
                     break;
                 case ArgTypes::Value:
-                    findValueArg(argc, argv, optv[_index]);
+                    findValueArg(argc, argv, optv[index]);
                     break;
                 default:
                     return;
             }
-            ++_index;
+            ++index;
         }
     }
 }
