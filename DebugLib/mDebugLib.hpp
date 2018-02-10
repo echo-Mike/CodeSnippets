@@ -34,7 +34,17 @@
 *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 *   SOFTWARE.
 **/
-
+/**
+*	Usage guide:
+*	Use case: Information message
+*	DEBUG_INFO_MESSAGE
+*		DEBUG_PRINT1("Thiis is an info message with one param");
+*		DEBUG_PRINT2("Thiis is an info message with two params: ", 100);
+*		DEBUG_PRINT3("Thiis is an info message with three params: ", 100, " yey!!");
+*		DEBUG_PRINT( "Thiis is an info message with one to four params: ", 100, " Yo!!", "Yey!!");
+*	DEBUG_END_MESSAGE
+*		
+**/
 //Create one debug.hpp file in your project with macro presets for this lib
 #include "debug.hpp"
 
@@ -132,6 +142,8 @@ namespace DebugLib
 #define DEBUG_LIB_GET_MACRO_4(_1,_2,_3,_4,NAME,...) NAME
 #define DEBUG_LIB_GET_MACRO_5(_1,_2,_3,_4,_5,NAME,...) NAME
 
+/* Output macro set */
+
 #ifdef DEBUG
 //	Debug write macro
 //	Allow to output one value to debug stream without new line afterwards.
@@ -170,8 +182,11 @@ namespace DebugLib
 #	define DEBUG_PRINT(...) {}
 #endif /* DEBUG */
 
-//First line of new massege
+/* Debug message begining macro set */
 
+// Messages that starts with this macro have INFO level of importance
+// First line of message will be generated automatically:
+// "INFO::File_name:Line_number" 
 #ifndef DEBUG_INFO_MESSAGE
 
 #	if defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)
@@ -202,6 +217,9 @@ namespace DebugLib
 
 #endif /* DEBUG_INFO_MESSAGE */
 
+// Messages that starts with this macro have WARNING level of importance
+// First line of message will be generated automatically:
+// "WARNING::File_name:Line_number" 
 #ifndef DEBUG_WARNING_MESSAGE
 
 #	if defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)
@@ -232,6 +250,9 @@ namespace DebugLib
 
 #endif /* DEBUG_WARNING_MESSAGE */
 
+// Messages that starts with this macro have ERROR level of importance
+// First line of message will be generated automatically:
+// "ERROR::File_name:Line_number" 
 #ifndef DEBUG_ERROR_MESSAGE
 
 #	if defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)
@@ -262,6 +283,9 @@ namespace DebugLib
 
 #endif /* DEBUG_ERROR_MESSAGE */
 
+// Messages that starts with this macro have USER level of importance
+// First line of message must be provided by user
+// All provided arguments are forwarded to DEBUG_PRINT(...)
 #ifndef DEBUG_NEW_MESSAGE
 
 #	if defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)
@@ -292,47 +316,26 @@ namespace DebugLib
 
 #endif /* DEBUG_NEW_MESSAGE */
 
-//End line and flush
+/* Debug message ending macro set */
+
+// End message and flush
 #ifndef DEBUG_END_MESSAGE
-
-#	if defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)
-
-#		define DEBUG_END_MESSAGE 
-
-#	elif defined(DEBUG) && !defined(DEBUG_LIB_THREAD_SAFETY)
-
-#		define DEBUG_NEW_MESSAGE(...) \
-{ \
-	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::User ) \
-	{ \
-		DEBUG_PRINT(__VA_ARGS__);	
-		
+#	ifdef DEBUG
+#		define DEBUG_END_MESSAGE DEBUG_OUT << std::flush; } }
 #	else
-
-#		define DEBUG_NEW_MESSAGE(...) \
-{ \
-	while(false) \
-	{
-
+#		define DEBUG_END_MESSAGE } }
 #	endif
-
-	#ifdef DEBUG
-		#define DEBUG_END_MESSAGE DEBUG_OUT << std::flush; }
-	#else
-		#define DEBUG_END_MESSAGE }}
-	#endif
 #endif /* DEBUG_END_MESSAGE */
 
-//End message, flush and exit program with 'exitcode'
+// End message, flush and exit program with 'exitcode'
 #ifndef DEBUG_END_MESSAGE_AND_EXIT
-	#ifdef DEBUG 
-		#define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
-				DEBUG_OUT << std::flush; \
-				std::exit((exitcode)); }
-	#else
-		#define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
-			} std::exit((exitcode)); }
-	#endif
+#	ifdef DEBUG
+#		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
+		DEBUG_OUT << std::flush; } std::exit((exitcode)); }
+#	else
+#		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
+		} std::exit((exitcode)); }
+#	endif
 #endif /* DEBUG_END_MESSAGE_AND_EXIT */
 
-#endif
+#endif /* DEBUG_LIB_HPP__ */
