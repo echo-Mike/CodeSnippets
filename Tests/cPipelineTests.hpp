@@ -3,7 +3,6 @@
 #include <cstdio>
 #define TEST
 #include <PatternsLib/cPipeline.hpp>
-#include <ConceptsLib/mConcepts.hpp>
 using namespace Patterns;
 
 template < typename T >

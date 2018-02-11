@@ -13,7 +13,7 @@
 /** 
 *   MIT License
 *
-*   Copyright (c) 2017 Mikhail Demchenko dev.echo.mike@gmail.com
+*   Copyright (c) 2017-2018 Mikhail Demchenko dev.echo.mike@gmail.com
 *   
 *   Permission is hereby granted, free of charge, to any person obtaining a copy
 *   of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,20 @@
 
 #ifdef TEST
 #include <cstdio>
+#if defined(_WIN32) && defined(_MSC_VER)
+	//*
+	// For test purposes: float/double to int conversion
+	#pragma warning( disable : 4244 )
+	// For test purposes: std::size_t to int conversion
+	#pragma warning( disable : 4267 )
+	// For test purposes: std::size_t to int conversion for fprintf
+	#pragma warning( disable : 4477 )
+	// We use std::fopen instead of std::fopen_s
+	#pragma warning( disable : 4996 )
+	// static_cast<bool>(some_ptr)
+	#pragma warning( disable : 4800 )
+	//*/
+#endif
     struct PipelineLoggerSingleton
     {
         static std::FILE* getInstance(const char* path)
@@ -53,6 +67,11 @@
     private:
         std::FILE* h;
         PipelineLoggerSingleton(const char* path) : h(std::fopen(path,"w+")) {}
+        ~PipelineLoggerSingleton()
+        {
+            std::fflush(h);
+            std::fclose(h);
+        }
     };
 #endif
 
@@ -560,10 +579,14 @@ namespace Patterns {
         Pipeline& operator=(Pipeline&& other)
         {
             if (this == &other) return *this;
+            setHead();
+            clear(head);
             head = other.head;
             tail = other.tail;
             other.head = nullptr;
             other.tail = nullptr;
+            setHead();
+            setTail();
             return *this;
         }
 
@@ -584,8 +607,16 @@ namespace Patterns {
         *   Searches for the new head element on call.
         *   @return Reference to the first element.
         *   @complexity Linear in size of uncounted front elements or constant.
+        *   @exception std::runtime_error When container is empty or head is nullptr but this function is called.
         **/
-        reference front() { setHead(); return *head; }
+        reference front() 
+        { 
+            setHead();
+            if (head) 
+                return *head;
+            else
+                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.");
+        }
 
         /**
         *   @brief Returns a reference to the first element in the container.
@@ -593,8 +624,15 @@ namespace Patterns {
         *   Overload for constant containers.
         *   @return Reference to the first element.
         *   @complexity Constant.
+        *   @exception std::runtime_error When container is empty or head is nullptr but this function is called.
         **/
-        const_reference front() const { return *head; }
+        const_reference front() const 
+        { 
+            if (head) 
+                return *head;
+            else
+                throw std::runtime_error("ERROR::Pipeline::front::Dereferencing nullptr. Container is empty or no head set.");
+        }
 
         /**
         *   @brief Returns reference to the last element in the container.
@@ -602,8 +640,16 @@ namespace Patterns {
         *   Searches for the new tail element on call.
         *   @return Reference to the last element.
         *   @complexity Linear in size of uncounted back elements or constant.
+        *   @exception std::runtime_error When container is empty or tail is nullptr but this function is called.   
         **/
-        reference back() { setTail(); return *tail; }
+        reference back()
+        { 
+            setTail();
+            if (tail) 
+                return *tail;
+            else
+                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.");
+        }
 
         /**
         *   @brief Returns reference to the last element in the container.
@@ -611,9 +657,16 @@ namespace Patterns {
         *   Overload for constant containers.        
         *   @return Reference to the last element.
         *   @complexity Constant.
+        *   @exception std::runtime_error When container is empty or tail is nullptr but this function is called.        
         **/
-        const_reference back() const { return *tail; }
-        
+        const_reference back() const
+        {
+            if (tail) 
+                return *tail;
+            else
+                throw std::runtime_error("ERROR::Pipeline::back::Dereferencing nullptr. Container is empty or no tail set.");
+        }
+
         //@}
 
         /**
