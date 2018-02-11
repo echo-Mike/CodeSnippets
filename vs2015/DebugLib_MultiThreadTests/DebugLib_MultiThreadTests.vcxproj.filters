@@ -21,7 +21,7 @@
     <ClInclude Include="..\..\Tests\DebugLib_MultiThreadTest.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="debug.hpp">
+    <ClInclude Include="..\..\Tests\debug.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

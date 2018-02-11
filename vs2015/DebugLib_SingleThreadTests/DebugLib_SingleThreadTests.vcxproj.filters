@@ -18,10 +18,10 @@
     <ClInclude Include="..\..\DebugLib\mDebugLib.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="debug.hpp">
+    <ClInclude Include="..\..\Tests\DebugLib_SingleThreadTests.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tests\DebugLib_SingleThreadTests.hpp">
+    <ClInclude Include="..\..\Tests\debug.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

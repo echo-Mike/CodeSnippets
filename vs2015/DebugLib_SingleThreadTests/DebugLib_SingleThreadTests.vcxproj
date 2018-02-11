@@ -122,8 +122,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\DebugLib\mDebugLib.hpp" />
+    <ClInclude Include="..\..\Tests\debug.hpp" />
     <ClInclude Include="..\..\Tests\DebugLib_SingleThreadTests.hpp" />
-    <ClInclude Include="debug.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\DebugLib\DebugLib.cpp" />

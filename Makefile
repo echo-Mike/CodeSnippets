@@ -1,7 +1,11 @@
 ## Tools
 
 # echo with turned on backslash symbol recognition
-ECHO = echo -e
+ifeq ($(OS), Windows_NT)
+	ECHO = echo -e
+else
+	ECHO = echo
+endif
 # mkdir with flag to create perent directories
 MKDIR = mkdir -p
 # cp with recursive flag
@@ -15,6 +19,8 @@ RM_FOLDER = rm -rf
 CC = gcc
 # C++ compiler
 CXX = g++
+# Lib linker
+AR = ar
 
 ## Directories
 
@@ -24,8 +30,12 @@ TESTS_DIRECTORY:=./Tests
 TEST_BUILD = $(TESTS_DIRECTORY)/Build
 # Directory ti store build artifacts (in form of object files)
 OBJ_DIR = $(TEST_BUILD)/obj
-# Directory where library will be installed
+# Directory where library headers will be installed
 INSTALL_DIR = /usr/local/include
+# Directory where static library will be installed
+LIBRARY_DIR = /usr/local/lib
+# Directory where debug.hpp of your project is placed
+DEBUG_LIB_SETTINGS := 
 # Source directories to be copy recursively when install target is called 
 DIRECTORIES_TO_COPY = 	ArgumentsLib \
 						ClassUtilsLib \
@@ -109,6 +119,13 @@ uninstall:
 # Target for building and runing tests
 tests: $(OBJ_DIR) $(TESTS_APPS) run_tests
 
+# Target for building DebugLib as static library
+debuglib: $(OBJ_DIR) DebugLib/DebugLib.cpp DebugLib/mDebugLib.hpp $(DEBUG_LIB_SETTINGS)/debug.hpp
+	@$(ECHO) "Compiler error output is redirected to: DebugLibBuildLog.txt"
+	$(CXX) $(CXX_FLAGS) -I $(DEBUG_LIB_SETTINGS) -pthread -o $(OBJ_DIR)/DebugLib.o -c $< 2> DebugLibBuildLog.txt
+	$(AR) rcs $(OBJ_DIR)/libdebuglib.a $(OBJ_DIR)/DebugLib.o 2> DebugLibBuildLog.txt
+	cp $(OBJ_DIR)/libdebuglib.a $(LIBRARY_DIR)/libdebuglib.a
+
 # Include generated rules
 -include $(TESTS_DEPENDENCIES)
 
@@ -165,13 +182,18 @@ help:
 	@$(ECHO) "\ttests        Target for building and runing tests"
 	@$(ECHO) "\trun_tests    Dummy target for runing all tests"
 	@$(ECHO) "\tmake_test    Dummy target : prints out main Make variables of this script"
+	@$(ECHO) "\tdebuglib     Build DebugLib as static library"
 	@$(ECHO) "\tall          Runs install and then tests"
 	@$(ECHO)
 	@$(ECHO) "Supported variables:"
 	@$(ECHO) "\tCXX          C++ compiler"
 	@$(ECHO) "\tCC           C compiler - not used"
+	@$(ECHO) "\tAR           Library builder"
 	@$(ECHO) "\tINSTALL_DIR  Directory where library will be installed in subdirectory INSTALL_DIR/$(PROJECT_NAME)"
 	@$(ECHO) "\t             Default is: "$(INSTALL_DIR)
+	@$(ECHO) "\tLIBRARY_DIR  Directory where builded DebugLib will be copied"
+	@$(ECHO) "\t             Default is: "$(LIBRARY_DIR)
+	@$(ECHO) "\tDEBUG_LIB_SETTINGS  Directory where debug.hpp of your project located"
 	@$(ECHO) "\tCXX_FLAGS    Aditional c++ flags"
 	@$(ECHO) "\tCXX_STANDARD C++ standard to use. Default is c++17"
 	@$(ECHO) "\tECHO         echo tool. Default is echo -e"
