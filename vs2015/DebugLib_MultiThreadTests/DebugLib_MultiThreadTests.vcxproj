@@ -68,7 +68,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(SolutionDir)DebugLib_MultiThreadTests;$(SolutionDir)..\Tests;$(SolutionDir)..\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(SolutionDir)DebugLib_MultiThreadTests;$(SolutionDir)..\Tests;$(SolutionDir)..\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)DebugLib_MultiThreadTests;$(SolutionDir)..\Tests;$(SolutionDir)..\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)DebugLib_MultiThreadTests;$(SolutionDir)..\Tests;$(SolutionDir)..\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -110,6 +121,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\DebugLib\mDebugLib.hpp" />
+    <ClInclude Include="..\..\Tests\DebugLib_MultiThreadTest.hpp" />
+    <ClInclude Include="debug.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\DebugLib\DebugLib.cpp" />
+    <ClCompile Include="..\..\Tests\DebugLib_MultiThreadTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

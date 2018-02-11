@@ -503,7 +503,8 @@ namespace DebugLib
 /* Debug message start macro set */
 
 // Allows to use preprocessor operator# in non function-like macros
-#define DEBUG_LIB_AS_C_STRING(val) #val
+#define DEBUG_LIB_AS_C_STRING__(val) #val
+#define DEBUG_LIB_AS_C_STRING(val) DEBUG_LIB_AS_C_STRING__(val)
 
 // Messages that starts with this macro have INFO level of importance
 // First line of message will be generated automatically:
