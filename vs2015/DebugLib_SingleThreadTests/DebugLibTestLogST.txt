@@ -1,0 +1,28 @@
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: LogLevelFunctionsTest    : line:3   ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: LogLevelFunctionsTest    : line:25  ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: WriteMacroTests          : line:27  ] Starting test Total test count: 5
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: WriteMacroTests          : line:64  ] Passed tests count: 5
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: VariadicWriteMacroTests  : line:66  ] Starting test Total test count: 5
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: VariadicWriteMacroTests  : line:103 ] Passed tests count: 5
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: PrintMacroTests          : line:105 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: PrintMacroTests          : line:135 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: VariadicPrintMacroTests  : line:137 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: VariadicPrintMacroTests  : line:167 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: InfoMessageTest          : line:169 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: InfoMessageTest          : line:211 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: WarningMessageTest       : line:213 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: WarningMessageTest       : line:255 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: ErrorMessageTest         : line:257 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: ErrorMessageTest         : line:299 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: UserMessageTest          : line:301 ] Starting test Total test count: 4
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: UserMessageTest          : line:343 ] Passed tests count: 4
+
+[e:\repos\projects\c++\codesnippets\tests\debuglib_singlethreadtests.cpp: main                     : line:359 ] Total tests passed 38 out of 38

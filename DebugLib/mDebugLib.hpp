@@ -171,7 +171,7 @@
 *			DEBUG_OUT << ("This is an info message with two params: ") << (100) << DEBUG_LIB_NEXT_LINE;
 *			DEBUG_OUT << ("This is an info message with three params: ") << (100) << (" yey!!") << DEBUG_LIB_NEXT_LINE;
 *			DEBUG_OUT << ("This is an info message with one to four params: ") << (100) << (" Yo!!") << ("Yey!!") << DEBUG_LIB_NEXT_LINE;
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *	} // Middle scope end
 *	// Outer scope
@@ -187,7 +187,7 @@
 *			DEBUG_OUT << ("This is an info message with two params: ") << (100) << DEBUG_LIB_NEXT_LINE;
 *			DEBUG_OUT << ("This is an info message with three params: ") << (100) << (" yey!!") << DEBUG_LIB_NEXT_LINE;
 *			DEBUG_OUT << ("This is an info message with one to four params: ") << (100) << (" Yo!!") << ("Yey!!") << DEBUG_LIB_NEXT_LINE;
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *	} // Middle scope end
 *	// Outer scope
@@ -244,7 +244,7 @@
 *	DEBUG_END_MESSAGE:
 *		if defined(DEBUG):
 *
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *	} // Middle scope end
 *	// Outer scope
@@ -258,7 +258,7 @@
 *	DEBUG_END_MESSAGE_AND_EVAL:
 *		if defined(DEBUG):
 *
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *		expression
 *	} // Middle scope end
@@ -274,7 +274,7 @@
 *	DEBUG_END_MESSAGE_AND_EXIT:
 *		if defined(DEBUG):
 *
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *		::std::exit((exitcode));
 *	} // Middle scope end
@@ -290,7 +290,7 @@
 *	DEBUG_END_MESSAGE_EVAL_AND_EXIT:
 *		if defined(DEBUG):
 *
-*			DEBUG_OUT << ::std::flush;
+*			DEBUG_OUT << DEBUG_LIB_FLUSH;
 *		} // Inner scope end
 *		expression
 *		::std::exit((exitcode));
@@ -439,9 +439,18 @@ namespace DebugLib
 #	define DEBUG_LIB_NEXT_LINE '\n'
 #endif /* DEBUG_LIB_NEXT_LINE */
 
+// Flush definition
+#ifndef DEBUG_LIB_FLUSH
+#	define DEBUG_LIB_FLUSH ::std::flush
+#endif /* DEBUG_LIB_FLUSH */
+
 // Selector macro set
-#define DEBUG_LIB_GET_MACRO_4(_1,_2,_3,_4,NAME,...) NAME
-#define DEBUG_LIB_GET_MACRO_5(_1,_2,_3,_4,_5,NAME,...) NAME
+#define DEBUG_LIB_GET_MACRO_4(_1, _2, _3, _4, NAME, ...) NAME
+#define DEBUG_LIB_GET_MACRO_5(_1, _2, _3, _4, _5, NAME, ...) NAME
+#ifdef _MSC_VER
+// MSVC PP is not same as other PP
+#	define DEBUG_LIB_EXPAND( x ) x
+#endif
 
 /* Output macro set */
 
@@ -450,25 +459,33 @@ namespace DebugLib
 //	Allow to output one value to debug stream without new line afterwards.
 #	define DEBUG_WRITE1(x) DEBUG_OUT << (x)
 //	Allow to output two values to debug stream without new line afterwards.
-#	define DEBUG_WRITE2(x,y) DEBUG_OUT << (x) << (y)
+#	define DEBUG_WRITE2(x, y) DEBUG_OUT << (x) << (y)
 //	Allow to output three values to debug stream without new line afterwards.
-#	define DEBUG_WRITE3(x,y,z) DEBUG_OUT << (x) << (y) << (z)
+#	define DEBUG_WRITE3(x, y, z) DEBUG_OUT << (x) << (y) << (z)
 //	Allow to output four values to debug stream without new line afterwards.
-#	define DEBUG_WRITE4(x,y,z,w) DEBUG_OUT << (x) << (y) << (z) << (w)
+#	define DEBUG_WRITE4(x, y, z, w) DEBUG_OUT << (x) << (y) << (z) << (w)
 //	Allow to output four values to debug stream without new line afterwards.
-#	define DEBUG_WRITE5(x,y,z,w,h) DEBUG_OUT << (x) << (y) << (z) << (w) << (h)
+#	define DEBUG_WRITE5(x, y, z, w, h) DEBUG_OUT << (x) << (y) << (z) << (w) << (h)
 //	Auto select between DEBUG_WRITEN macros set
-#	define DEBUG_WRITE(...) DEBUG_LIB_GET_MACRO_5(__VA_ARGS__, DEBUG_WRITE5, DEBUG_WRITE4, DEBUG_WRITE3, DEBUG_WRITE2, DEBUG_WRITE1)(__VA_ARGS__)
+#	ifdef _MSC_VER
+#		define DEBUG_WRITE(...) DEBUG_LIB_EXPAND(DEBUG_LIB_GET_MACRO_5(__VA_ARGS__, DEBUG_WRITE5, DEBUG_WRITE4, DEBUG_WRITE3, DEBUG_WRITE2, DEBUG_WRITE1)(__VA_ARGS__))
+#	else
+#		define DEBUG_WRITE(...) DEBUG_LIB_GET_MACRO_5(__VA_ARGS__, DEBUG_WRITE5, DEBUG_WRITE4, DEBUG_WRITE3, DEBUG_WRITE2, DEBUG_WRITE1)(__VA_ARGS__)
+#endif
 //	Allow to output one value to debug stream with new line afterwards.
 #	define DEBUG_PRINT1(x) DEBUG_OUT << (x) << DEBUG_LIB_NEXT_LINE
 //	Allow to output two values to debug stream with new line afterwards
-#	define DEBUG_PRINT2(x,y) DEBUG_OUT << (x) << (y) << DEBUG_LIB_NEXT_LINE
+#	define DEBUG_PRINT2(x, y) DEBUG_OUT << (x) << (y) << DEBUG_LIB_NEXT_LINE
 //	Allow to output three values to debug stream with new line afterwards.
-#	define DEBUG_PRINT3(x,y,z) DEBUG_OUT << (x) << (y) << (z) << DEBUG_LIB_NEXT_LINE
+#	define DEBUG_PRINT3(x, y, z) DEBUG_OUT << (x) << (y) << (z) << DEBUG_LIB_NEXT_LINE
 //	Allow to output four values to debug stream with new line afterwards.
-#	define DEBUG_PRINT4(x,y,z,w) DEBUG_OUT << (x) << (y) << (z) << (w) << DEBUG_LIB_NEXT_LINE
+#	define DEBUG_PRINT4(x, y, z, w) DEBUG_OUT << (x) << (y) << (z) << (w) << DEBUG_LIB_NEXT_LINE
 //	Auto select between DEBUG_PRINTN macros set
-#	define DEBUG_PRINT(...) DEBUG_LIB_GET_MACRO_4(__VA_ARGS__, DEBUG_PRINT4, DEBUG_PRINT3, DEBUG_PRINT2, DEBUG_PRINT1)(__VA_ARGS__)
+#	ifdef _MSC_VER
+#		define DEBUG_PRINT(...) DEBUG_LIB_EXPAND(DEBUG_LIB_GET_MACRO_4(__VA_ARGS__, DEBUG_PRINT4, DEBUG_PRINT3, DEBUG_PRINT2, DEBUG_PRINT1)(__VA_ARGS__))
+#	else
+#		define DEBUG_PRINT(...) DEBUG_LIB_GET_MACRO_4(__VA_ARGS__, DEBUG_PRINT4, DEBUG_PRINT3, DEBUG_PRINT2, DEBUG_PRINT1)(__VA_ARGS__)
+#endif
 #else
 #	define DEBUG_WRITE1(x) {}
 #	define DEBUG_WRITE2(x,y) {}
@@ -485,6 +502,9 @@ namespace DebugLib
 
 /* Debug message start macro set */
 
+// Allows to use preprocessor operator# in non function-like macros
+#define DEBUG_LIB_AS_C_STRING(val) #val
+
 // Messages that starts with this macro have INFO level of importance
 // First line of message will be generated automatically:
 // "INFO::File_name:Line_number" 
@@ -497,7 +517,7 @@ namespace DebugLib
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Info ) \
 	{ \
 		::std::lock_guard<::std::mutex> DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME(::DebugLib::DEBUG_LIB_MUTEX_VAR_NAME); \
-		DEBUG_PRINT1("INFO::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("INFO::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 
 #	elif defined(DEBUG) && !defined(DEBUG_LIB_THREAD_SAFETY)
 
@@ -505,7 +525,7 @@ namespace DebugLib
 { \
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Info ) \
 	{ \
-		DEBUG_PRINT1("INFO::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("INFO::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 		
 #	else
 
@@ -530,7 +550,7 @@ namespace DebugLib
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Warning ) \
 	{ \
 		::std::lock_guard<::std::mutex> DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME(::DebugLib::DEBUG_LIB_MUTEX_VAR_NAME); \
-		DEBUG_PRINT1("WARNING::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("WARNING::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 
 #	elif defined(DEBUG) && !defined(DEBUG_LIB_THREAD_SAFETY)
 
@@ -538,7 +558,7 @@ namespace DebugLib
 { \
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Warning ) \
 	{ \
-		DEBUG_PRINT1("WARNING::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("WARNING::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 
 #	else
 
@@ -563,7 +583,7 @@ namespace DebugLib
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Error ) \
 	{ \
 		::std::lock_guard<::std::mutex> DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME(::DebugLib::DEBUG_LIB_MUTEX_VAR_NAME); \
-		DEBUG_PRINT1("ERROR::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("ERROR::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 
 #	elif defined(DEBUG) && !defined(DEBUG_LIB_THREAD_SAFETY)
 
@@ -571,7 +591,7 @@ namespace DebugLib
 { \
 	if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Error ) \
 	{ \
-		DEBUG_PRINT1("ERROR::" __FILE__ ":" #__LINE__);
+		DEBUG_PRINT1("ERROR::" __FILE__ ":" DEBUG_LIB_AS_C_STRING(__LINE__));
 
 #	else
 
@@ -622,7 +642,7 @@ namespace DebugLib
 // End message and flush
 #ifndef DEBUG_END_MESSAGE
 #	ifdef DEBUG
-#		define DEBUG_END_MESSAGE DEBUG_OUT << ::std::flush; } }
+#		define DEBUG_END_MESSAGE DEBUG_OUT << DEBUG_LIB_FLUSH; } }
 #	else
 #		define DEBUG_END_MESSAGE } }
 #	endif
@@ -632,7 +652,7 @@ namespace DebugLib
 #ifndef DEBUG_END_MESSAGE_AND_EVAL
 #	ifdef DEBUG
 #		define DEBUG_END_MESSAGE_AND_EVAL(expression) \
-			DEBUG_OUT << ::std::flush; \
+			DEBUG_OUT << DEBUG_LIB_FLUSH; \
 		}\
 	expression \
  }
@@ -648,7 +668,7 @@ namespace DebugLib
 #ifndef DEBUG_END_MESSAGE_AND_EXIT
 #	ifdef DEBUG
 #		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
-		DEBUG_OUT << ::std::flush; } ::std::exit((exitcode)); }
+		DEBUG_OUT << DEBUG_LIB_FLUSH; } ::std::exit((exitcode)); }
 #	else
 #		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
 		} ::std::exit((exitcode)); }
@@ -659,7 +679,7 @@ namespace DebugLib
 #ifndef DEBUG_END_MESSAGE_EVAL_AND_EXIT
 #	ifdef DEBUG
 #		define DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression) \
-			DEBUG_OUT << ::std::flush; \
+			DEBUG_OUT << DEBUG_LIB_FLUSH; \
 		} \
 	expression \
 	::std::exit((exitcode));\
@@ -672,5 +692,67 @@ namespace DebugLib
  }
 #	endif
 #endif /* DEBUG_END_MESSAGE_EVAL_AND_EXIT */
+
+/* Tests */
+
+#ifdef DEBUG_LIB_TEST
+#if defined(_WIN32) && defined(_MSC_VER)
+	//*
+	// For test purposes: float/double to int conversion
+	#pragma warning( disable : 4244 )
+	// For test purposes: std::size_t to int conversion
+	#pragma warning( disable : 4267 )
+	// For test purposes: DEBUG_OUT macro multiple redefinition
+	#pragma warning( disable : 4005 )
+	// For test purposes: std::size_t to int conversion for fprintf
+	#pragma warning( disable : 4477 )
+	// We use std::fopen instead of std::fopen_s
+	#pragma warning( disable : 4996 )
+	//*/
+#endif
+#	include <cstdio>
+	namespace DebugLib 
+	{
+		struct DebugLibLoggerSingleton
+		{
+			static std::FILE* getInstance(const char* path)
+			{
+				static DebugLibLoggerSingleton s(path);
+				return s.h;
+			}
+
+		private:
+			std::FILE* h;
+		
+			DebugLibLoggerSingleton(const char* path) : h(std::fopen(path, "w+")) {}
+
+			~DebugLibLoggerSingleton()
+			{
+				std::fflush(h);
+				std::fclose(h);
+			}
+		};
+
+#	ifdef DEBUG_LIB_THREAD_SAFETY
+		extern ::std::mutex Debug_Lib_Logger_Singletone_Mutex__;
+#	endif
+
+	} // namespace DebugLib
+
+#	ifndef	LOG
+#		ifdef DEBUG_LIB_THREAD_SAFETY
+#			define LOG(format, ...) \
+do { \
+	::std::lock_guard<::std::mutex> Debug_Lib_Logger_LG__(::DebugLib::Debug_Lib_Logger_Singletone_Mutex__); \
+	::std::fprintf(::DebugLib::DebugLibLoggerSingleton::getInstance(".\\DebugLibTestLogMT.txt"), "[%-35s: %-25s: line:%-4d] " format "\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__); \
+} while(0);
+#		else
+#			define LOG(format, ...) \
+do { \
+	::std::fprintf(::DebugLib::DebugLibLoggerSingleton::getInstance(".\\DebugLibTestLogST.txt"), "[%-35s: %-25s: line:%-4d] " format "\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__); \
+} while(0);
+#		endif
+#	endif 
+#endif /* DEBUG_LIB_TEST */
 
 #endif /* DEBUG_LIB_HPP__ */
