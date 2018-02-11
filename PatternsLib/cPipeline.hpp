@@ -13,7 +13,7 @@
 /** 
 *   MIT License
 *
-*   Copyright (c) 2017 Mikhail Demchenko dev.echo.mike@gmail.com
+*   Copyright (c) 2017-2018 Mikhail Demchenko dev.echo.mike@gmail.com
 *   
 *   Permission is hereby granted, free of charge, to any person obtaining a copy
 *   of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,20 @@
 
 #ifdef TEST
 #include <cstdio>
+#if defined(_WIN32) && defined(_MSC_VER)
+	//*
+	// For test purposes: float/double to int conversion
+	#pragma warning( disable : 4244 )
+	// For test purposes: std::size_t to int conversion
+	#pragma warning( disable : 4267 )
+	// For test purposes: std::size_t to int conversion for fprintf
+	#pragma warning( disable : 4477 )
+	// We use std::fopen instead of std::fopen_s
+	#pragma warning( disable : 4996 )
+	// static_cast<bool>(some_ptr)
+	#pragma warning( disable : 4800 )
+	//*/
+#endif
     struct PipelineLoggerSingleton
     {
         static std::FILE* getInstance(const char* path)

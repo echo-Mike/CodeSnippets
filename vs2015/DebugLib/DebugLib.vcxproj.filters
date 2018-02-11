@@ -18,6 +18,9 @@
     <ClInclude Include="..\..\DebugLib\mDebugLib.hpp">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="debug.hpp">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\DebugLib\DebugLib.cpp">

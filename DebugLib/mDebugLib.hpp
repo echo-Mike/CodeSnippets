@@ -35,15 +35,297 @@
 *   SOFTWARE.
 **/
 /**
-*	Usage guide:
-*	Use case: Information message
+*	Section: Macros that can be redefined
+*	
+*	In order of appearance:
+*
+*	DEBUG_LIB_MUTEX_VAR_NAME - defines the name to be used for the global output mutex. 
+*		This name is encapsulated in DebugLib namespace. You can refer to this variable as:
+*		::DebugLib::DEBUG_LIB_MUTEX_VAR_NAME
+*		Default value: Debug_Lib_Main_Mutex__
+*		Status: Implementation dependent
+*
+*	DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME - defines the name of ::std::lock_guard for inner scope.
+*		This name is only accesble from Inner scope (See section: Scopes) as:
+*		DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME
+*		Default value: Debug_Lib_Msg_Scope_Lg__
+*		Status: Implementation dependent
+*
+*	DEBUG_LIB_DEFAULT_LOG_LEVEL - defines the log level with which the application starts.
+*		If redefined must be one of DebugLib::Level enum members.
+*		Default value: ::DebugLib::Level::All
+*		Status: Implementation independent
+*
+*	DEBUG_LIB_LOG_FILE_VAR_NAME - defines the name to be used for the output file stream if defined(DEBUG_LIB_FILE_LOG). 
+*		This name is encapsulated in DebugLib namespace. You can refer to this variable as:
+*		::DebugLib::DEBUG_LIB_LOG_FILE_VAR_NAME
+*		Only accessible if defined(DEBUG_LIB_FILE_LOG), otherwise have no effect.
+*		Default value: Debug_Lib_Log_File__
+*		Status: Implementation dependent
+*
+*	DEBUG_LIB_LOG_FILE_NAME - defines the file name of general log file.
+*		If redefined must be a C-string with valid path to file.
+*		On start of application this file will be opend with std::fstream::app | std::fstream::out flags.
+*		It is a user's responsibility to check state of this file stream.
+*		Only accessible if defined(DEBUG_LIB_FILE_LOG)), otherwise have no effect.
+*		Default value: "log.dat"
+*		Status: Implementation independent
+*
+*	DEBUG_OUT - defines the object to which all output will be redirected.
+*		Must have operator<< that accepts at least C-strings, char, any numbers(integers or floats),
+*		::std::flush and returns reference to this object.
+*		Default value:
+*			If defined(DEBUG_LIB_FILE_LOG):
+*				::DebugLib::DEBUG_LIB_LOG_FILE_VAR_NAME
+*			else
+*				::std::clog
+*		Status: Implementation independent
+*
+*	DEBUG_LIB_NEXT_LINE - defines a line separator.
+*		Default value: '\n'
+*		Status: Implementation independent
+*
+*	DEBUG_INFO_MESSAGE, DEBUG_WARNING_MESSAGE, DEBUG_ERROR_MESSAGE, DEBUG_NEW_MESSAGE(...) 
+*		- defines a new debug message start.
+*		Any macro of start message macro set may be redefined.
+*		This macros may be used directly after any of next statements:
+*			for(), while(), if(), else, try, catch(), function_definition
+		as if they defines the statement scope.
+*		Status: Implementation independent
+*
+*	DEBUG_END_MESSAGE, DEBUG_END_MESSAGE_AND_EVAL(expression), DEBUG_END_MESSAGE_AND_EXIT(exitcode), DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression)
+*		_ defines the end of debug message.
+*		Any macro of end message macro set may be redefined.
+*		Status: Implementation independent
+*
+*	Section: Library behaviour macros
+*
+*	DEBUG_LIB_THREAD_SAFETY - if defined output facility must be thread safe.
+*		Including:
+*			1) Global log level must be an atomic variable.
+*			2) The Inner scope must be a critical section protected by mutual exclusion or other synchronization or concurrent execution safety means.
+*		For default implementation the <mutex> and <atomic> headers must be available.
+*		Status: Implementation independent
+*
+*	DEBUG_LIB_FILE_LOG - if defined the implementation must create a file output to be used in DEBUG_OUT.
+*		For default implementation the <fstream> header must be available if defined(DEBUG_LIB_FILE_LOG)
+*		and <iostream> if !defined(DEBUG_LIB_FILE_LOG).
+*		Status: Implementation independent
+*
+*	DEBUG - if defined Inner scope content must be generated, otherwise it may be not generated.
+*		Status: Implementation independent
+*
+*	Section: Compilation
+*
+*	This library must be compiled.
+*	It supports two cases: compile with your project and compile as static library.
+*	To compile with your project simply include this file to you build script and compile paired .cpp file as part of your project.
+*	To compile as static library use provided build scripts and include builded library and header to build scripts of your project.
+*	Generally if thread safety is not needed the library is compatible with C++98 (See section: Other information).
+*	If thread safety is needed your compiler must inplement C++11 thread and atomic std libraries.
+*	
+*	Section: Usage guide
+*
+*	Use one of start message macro set to start new debug message:
+*		DEBUG_INFO_MESSAGE, DEBUG_WARNING_MESSAGE, DEBUG_ERROR_MESSAGE, DEBUG_NEW_MESSAGE(...)
+*
+*	Then use output macro set to output your message:
+*		DEBUG_PRINT[1-4](1-4 args), DEBUG_PRINT(... (1-4 args)) - to print a line (DEBUG_LIB_NEXT_LINE will be put in the end of every call)
+*		DEBUG_WRITE[1-5](1-5 args), DEBUG_WRITE(... (1-5 args)) - to write a line (DEBUG_LIB_NEXT_LINE will not be put in the end of every call)
+*
+*	All output are directed to DEBUG_OUT macro using operator<<.
+*
+*	To finish your message use next macros (end message macro set):
+*		DEBUG_END_MESSAGE - finish your message and send ::std::flush to output stream;
+*		DEBUG_END_MESSAGE_AND_EVAL(expression) - finish your message, send ::std::flush to output stream and evaluate
+*			provided expression in middle scope (See: scopes section). To evaluate a complex expression surround it with "{}". 
+*			If it is a oneline expression it must be ended with ";" (See: code generation section).
+*			expression is evaluated even when DEBUG macro is undefined.
+*			If an expression throws no actions to catch the exception will be taken.
+*		DEBUG_END_MESSAGE_AND_EXIT(exitcode) - finish your message, send ::std::flush to output stream and call
+*			::std::exit((exitcode)) expression in middle scope.
+*		DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression) - combination of DEBUG_END_MESSAGE_AND_EVAL and DEBUG_END_MESSAGE_AND_EXIT.
+*			::std::exit((exitcode)) is called right after evaluation an expression.
+*
+*	Section: Example
+*	
+*	Information message
+*	In code:
 *	DEBUG_INFO_MESSAGE
-*		DEBUG_PRINT1("Thiis is an info message with one param");
-*		DEBUG_PRINT2("Thiis is an info message with two params: ", 100);
-*		DEBUG_PRINT3("Thiis is an info message with three params: ", 100, " yey!!");
-*		DEBUG_PRINT( "Thiis is an info message with one to four params: ", 100, " Yo!!", "Yey!!");
+*		DEBUG_PRINT1("This is an info message with one param");
+*		DEBUG_PRINT2("This is an info message with two params: ", 100);
+*		DEBUG_PRINT3("This is an info message with three params: ", 100, " yey!!");
+*		DEBUG_PRINT( "This is an info message with one to four params: ", 100, " Yo!!", "Yey!!");
 *	DEBUG_END_MESSAGE
-*		
+*
+*	Code generated: (comments are not generated)
+*	If defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY):
+*
+*	// Outer scope
+*	{	// Middle scope begin
+*		if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Info )
+*		{	// Inner scope begin
+*			::std::lock_guard<::std::mutex> DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME(::DebugLib::DEBUG_LIB_MUTEX_VAR_NAME);
+*			DEBUG_OUT << ("INFO::" __FILE__ ":" #__LINE__) << DEBUG_LIB_NEXT_LINE; // "INFO::" __FILE__ ":" #__LINE__ is merged in one c-string by compiler
+*			DEBUG_OUT << ("This is an info message with one param") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with two params: ") << (100) << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with three params: ") << (100) << (" yey!!") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with one to four params: ") << (100) << (" Yo!!") << ("Yey!!") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*	} // Middle scope end
+*	// Outer scope
+*
+*	If defined(DEBUG) && !defined(DEBUG_LIB_THREAD_SAFETY):
+*
+*	// Outer scope
+*	{	// Middle scope begin
+*		if (::DebugLib::GetGlobalLogLevel() <= ::DebugLib::Level::Info )
+*		{	// Inner scope begin
+*			DEBUG_OUT << ("INFO::" __FILE__ ":" #__LINE__) << DEBUG_LIB_NEXT_LINE; // "INFO::" __FILE__ ":" #__LINE__ is merged in one c-string by compiler
+*			DEBUG_OUT << ("This is an info message with one param") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with two params: ") << (100) << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with three params: ") << (100) << (" yey!!") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ("This is an info message with one to four params: ") << (100) << (" Yo!!") << ("Yey!!") << DEBUG_LIB_NEXT_LINE;
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*	} // Middle scope end
+*	// Outer scope
+*
+*	If !defined(DEBUG):
+*
+*	// Outer scope
+*	{	// Middle scope begin
+*		while (false)
+*		{	// Inner scope begin
+*			{}
+*			{}
+*			{}
+*			{}
+*		} // Inner scope end
+*	} // Middle scope end
+*	// Outer scope
+*
+*	Possible output:
+*	INFO::File_name:Line_number
+*	This is an info message with one param
+*	This is an info message with two params: 100
+*	This is an info message with three params: 100 yey!!
+*	This is an info message with one to four params: 100 Yo!! Yey!!
+*
+*	Section: Scopes
+*
+*	Four scopes are defined: Global, Outer, Middle and Inner.
+*
+*	Global scope - the scope where name lookup is done. Every named entity are prefixed with operator:: for this reason (like ::std::flush).
+*
+*	Outer scope - the scope before any macro of start message macro set and after any macro of end message macro set:
+*		{
+*			// Outer scope
+*			DEBUG_INFO_MESSAGE
+*				// Smth
+*				// ...
+*			DEBUG_END_MESSAGE
+*			// Outer scope
+*		}
+*		All variables of Outer scope is accessible if Middle and Inner scopes.
+*
+*	Middle scope - the scope that surrounds inner scope. 
+*		expression from DEBUG_END_MESSAGE_AND_EVAL and DEBUG_END_MESSAGE_EVAL_AND_EXIT is evaluated here.
+*		::std::exit is also called from this scope.
+*		Even if the Inner scope may be skipped as a result of undefined DEBUG macro or higher log level
+*		expressions evaluated in this scope is never skipped.
+*
+*	Inner scope - the scope inside which the output occurs. This scope may be skipped due to undefined DEBUG macro or higher log level.
+*		If defined(DEBUG_LIB_THREAD_SAFETY) then all expressions inside this scope are protected by mutex.
+*
+*	Section: Code generation (comments are not generated)
+*
+*	DEBUG_END_MESSAGE:
+*		if defined(DEBUG):
+*
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*	} // Middle scope end
+*	// Outer scope
+*
+*		if !defined(DEBUG):
+*
+*		} // Inner scope end
+*	} // Middle scope end
+*	// Outer scope
+*
+*	DEBUG_END_MESSAGE_AND_EVAL:
+*		if defined(DEBUG):
+*
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*		expression
+*	} // Middle scope end
+*	// Outer scope
+*
+*		if !defined(DEBUG):
+*
+*		} // Inner scope end
+*		expression
+*	} // Middle scope end
+*	// Outer scope
+*
+*	DEBUG_END_MESSAGE_AND_EXIT:
+*		if defined(DEBUG):
+*
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*		::std::exit((exitcode));
+*	} // Middle scope end
+*	// Outer scope
+*
+*		if !defined(DEBUG):
+*
+*		} // Inner scope end
+*		::std::exit((exitcode));
+*	} // Middle scope end
+*	// Outer scope
+*
+*	DEBUG_END_MESSAGE_EVAL_AND_EXIT:
+*		if defined(DEBUG):
+*
+*			DEBUG_OUT << ::std::flush;
+*		} // Inner scope end
+*		expression
+*		::std::exit((exitcode));
+*	} // Middle scope end
+*	// Outer scope
+*
+*		if !defined(DEBUG):
+*
+*		} // Inner scope end
+*		expression
+*		::std::exit((exitcode));
+*	} // Middle scope end
+*	// Outer scope
+*
+*	Section: Other information
+*
+*	Standard names used in implementation:
+*		::std::mutex
+*		::std::ofstream
+*		::std::clog
+*		::std::lock_guard
+*		::std::flush
+*		::std::exit
+*		::std::fstream::app 
+*		::std::fstream::out
+*		::atomic<int>::load
+*		::atomic<int>::compare_exchange_strong
+*		::atomic<int>::compare_exchange_weak
+*
+*	Features that must be removed to compile with C++98:
+*		Comment move constructor and assignment operator for DebugLib::LogLevel
+*
+*	NESTED MESSAGES ARE NOT ALLOWED!!!
+*		Usage of nested messages is undefined behaviour.
+*
 **/
 //Create one debug.hpp file in your project with macro presets for this lib
 #include "debug.hpp"
@@ -55,15 +337,15 @@
 /// STD for threads
 #	include <mutex>
 #	include <atomic>
-//	Async access control
+//	Concurrent access control
 #	ifndef DEBUG_LIB_MUTEX_VAR_NAME
 #		define DEBUG_LIB_MUTEX_VAR_NAME Debug_Lib_Main_Mutex__
 #	endif
 namespace DebugLib 
 {
-	extern std::mutex DEBUG_LIB_MUTEX_VAR_NAME;
+	extern ::std::mutex DEBUG_LIB_MUTEX_VAR_NAME;
 }
-//Output lock guard for global mutex var name macro def : to avoid name conflict
+//	Output lock guard for global mutex var name macro def : to avoid name conflict
 #	ifndef DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME
 #		define DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME Debug_Lib_Msg_Scope_Lg__
 #	endif
@@ -71,21 +353,40 @@ namespace DebugLib
 
 namespace DebugLib
 {
+	/**
+	 *	Defines the possible log levels.
+	 */
 	enum Level : int 
 	{
-		All = 0,
-		Info,
-		Warning,
-		Error,
-		User,
-		Nothing
+		All = 0, 	//!< Log any messages
+		Info = 0,	//!< Log messages with INFO and higher priority (DEBUG_INFO_MESSAGE, DEBUG_WARNING_MESSAGE, DEBUG_ERROR_MESSAGE, DEBUG_NEW_MESSAGE)
+		Warning,	//!< Log messages with WARNING and higher priority (DEBUG_WARNING_MESSAGE, DEBUG_ERROR_MESSAGE, DEBUG_NEW_MESSAGE)
+		Error,		//!< Log messages with ERROR and higher priority (DEBUG_ERROR_MESSAGE, DEBUG_NEW_MESSAGE)
+		User,		//!< Log only messages that starts with DEBUG_NEW_MESSAGE
+		Nothing		//!< Suppress all logging
 	};
 	
+	/**
+	 *	@brief Method to obtain read access current global log level.
+	 *	If DEBUG_LIB_THREAD_SAFETY is defined then the read operation is atomic.
+	 *	@return Current global log level.
+	 */
 	DebugLib::Level GetGlobalLogLevel();
-
+	
+	/**
+	 *	@brief Try to change global log level.
+	 *	If DEBUG_LIB_THREAD_SAFETY is defined then one call to compare_exchange_strong is made.
+	 *	@return true if level was changed, false otherwise.
+	 */
 	bool try_SetGlobalLogLevel(DebugLib::Level l);
 
-	bool SetGlobalLogLevel(DebugLib::Level l);
+	/**
+	 *	@brief Change global log level (may block).
+	 *	If DEBUG_LIB_THREAD_SAFETY is defined then compare_exchange_weak is called repeatedly until
+	 *	desired log level is set.
+	 *	@return true if level was changed, false otherwise.
+	 */
+	void SetGlobalLogLevel(DebugLib::Level l);
 }
 #ifndef DEBUG_LIB_DEFAULT_LOG_LEVEL
 #	define DEBUG_LIB_DEFAULT_LOG_LEVEL ::DebugLib::Level::All
@@ -96,7 +397,7 @@ namespace DebugLib
 #		include <fstream>
 //		Output variable name macro def : to avoid name conflict
 #		ifndef DEBUG_LIB_LOG_FILE_VAR_NAME
-#			define DEBUG_LIB_LOG_FILE_VAR_NAME Debug_Lib_Log__
+#			define DEBUG_LIB_LOG_FILE_VAR_NAME Debug_Lib_Log_File__
 #		endif
 //		Std log file path + name
 #		ifndef DEBUG_LIB_LOG_FILE_NAME
@@ -104,7 +405,7 @@ namespace DebugLib
 #		endif
 		namespace DebugLib 
 		{
-			extern std::ofstream DEBUG_LIB_LOG_FILE_VAR_NAME;
+			extern ::std::ofstream DEBUG_LIB_LOG_FILE_VAR_NAME;
 		}
 #		define DEBUG_OUT ::DebugLib::DEBUG_LIB_LOG_FILE_VAR_NAME
 #	endif
@@ -182,7 +483,7 @@ namespace DebugLib
 #	define DEBUG_PRINT(...) {}
 #endif /* DEBUG */
 
-/* Debug message begining macro set */
+/* Debug message start macro set */
 
 // Messages that starts with this macro have INFO level of importance
 // First line of message will be generated automatically:
@@ -316,26 +617,60 @@ namespace DebugLib
 
 #endif /* DEBUG_NEW_MESSAGE */
 
-/* Debug message ending macro set */
+/* Debug message end macro set */
 
 // End message and flush
 #ifndef DEBUG_END_MESSAGE
 #	ifdef DEBUG
-#		define DEBUG_END_MESSAGE DEBUG_OUT << std::flush; } }
+#		define DEBUG_END_MESSAGE DEBUG_OUT << ::std::flush; } }
 #	else
 #		define DEBUG_END_MESSAGE } }
 #	endif
 #endif /* DEBUG_END_MESSAGE */
 
+// End message, flush and evaluate an expression
+#ifndef DEBUG_END_MESSAGE_AND_EVAL
+#	ifdef DEBUG
+#		define DEBUG_END_MESSAGE_AND_EVAL(expression) \
+			DEBUG_OUT << ::std::flush; \
+		}\
+	expression \
+ }
+#	else
+#		define DEBUG_END_MESSAGE_AND_EVAL(expression) \
+		}\
+	expression \
+ }
+#	endif
+#endif /* DEBUG_END_MESSAGE_AND_EVAL */
+
 // End message, flush and exit program with 'exitcode'
 #ifndef DEBUG_END_MESSAGE_AND_EXIT
 #	ifdef DEBUG
 #		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
-		DEBUG_OUT << std::flush; } std::exit((exitcode)); }
+		DEBUG_OUT << ::std::flush; } ::std::exit((exitcode)); }
 #	else
 #		define DEBUG_END_MESSAGE_AND_EXIT(exitcode) \
-		} std::exit((exitcode)); }
+		} ::std::exit((exitcode)); }
 #	endif
 #endif /* DEBUG_END_MESSAGE_AND_EXIT */
+
+// End message, flush, evaluate an expression and exit program with 'exitcode'
+#ifndef DEBUG_END_MESSAGE_EVAL_AND_EXIT
+#	ifdef DEBUG
+#		define DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression) \
+			DEBUG_OUT << ::std::flush; \
+		} \
+	expression \
+	::std::exit((exitcode));\
+ }
+#	else
+#		define DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression) \
+		} \
+	expression \
+	::std::exit((exitcode));\
+ }
+#	endif
+#endif /* DEBUG_END_MESSAGE_EVAL_AND_EXIT */
 
 #endif /* DEBUG_LIB_HPP__ */
