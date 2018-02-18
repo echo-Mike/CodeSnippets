@@ -38,11 +38,11 @@
 /*         DESTRUCTOR          */
 /*******************************/
 
-#define VirtualDestructorDefinition(className) virtual ~className();
+#define VirtualDestructorDeclaration(className) virtual ~className();
 
-#define VirtualDestructorDeclaration(className) virtual ~className() {}
+#define VirtualDestructorDefinition(className) virtual ~className() {}
 
-#define VirtualDestructor(className) VirtualDestructorDeclaration(className)
+#define VirtualDestructor(className) VirtualDestructorDefinition(className)
 
 /*******************************/
 /*        CONSTRUCTOR          */
@@ -61,7 +61,7 @@
 #define DefaultCopyAssignable(className) className& operator=(const className&) = default;
 
 #define DefaultCopyable(className)\
-DefaultCopyConstructible(className)\
+DefaultCopyConstructible(className) \
 DefaultCopyAssignable(className)
 
 #define NotCopyConstructible(className) className(const className&) = delete;
@@ -69,7 +69,7 @@ DefaultCopyAssignable(className)
 #define NotCopyAssignable(className) className& operator=(const className&) = delete;
 
 #define NotCopyable(className)\
-NotCopyConstructible(className)\
+NotCopyConstructible(className) \
 NotCopyAssignable(className)
 
 /*******************************/
@@ -81,7 +81,7 @@ NotCopyAssignable(className)
 #define DefaultMoveAssignable(className) className& operator=(className&&) = default;
 
 #define DefaultMovable(className)\
-DefaultMoveConstructible(className)\
+DefaultMoveConstructible(className) \
 DefaultMoveAssignable(className)
 
 #define NotMoveConstructible(className) className(className&&) = delete;
@@ -89,7 +89,7 @@ DefaultMoveAssignable(className)
 #define NotMoveAssignable(className) className& operator=(className&&) = delete;
 
 #define NotMovable(className)\
-NotMoveConstructible(className)\
+NotMoveConstructible(className) \
 NotMoveAssignable(className)
 
 /*******************************/
@@ -97,37 +97,37 @@ NotMoveAssignable(className)
 /*******************************/
 
 #define DefaultCopyableAndMovable(className)\
-DefaultCopyable(className)\
+DefaultCopyable(className) \
 DefaultMovable(className)
 
 #define NotCopyableNotMovable(className)\
-NotCopyable(className)\
+NotCopyable(className) \
 NotMovable(className)
 
 #define DefaultCopyableNotMovable(className)\
-DefaultCopyable(className)\
+DefaultCopyable(className) \
 NotMovable(className)
 
 #define DefaultMovableNotCopyable(className)\
-NotCopyable(className)\
+NotCopyable(className) \
 DefaultMovable(className)
 
 #define DefaultCopyAndMoveConstructible(className)\
-DefaultCopyConstructible(className)\
+DefaultCopyConstructible(className) \
 DefaultMoveConstructible(className)
 
 #define DefaultCopyAndMoveAssignable(className)\
-DefaultCopyAssignable(className)\
+DefaultCopyAssignable(className) \
 DefaultMoveAssignable(className)
 
 #define DefaultConstructibleNotAssignable(className)\
-DefaultCopyAndMoveConstructible(className)\
-NotCopyAssignable(className)\
+DefaultCopyAndMoveConstructible(className) \
+NotCopyAssignable(className) \
 NotMoveAssignable(className)
 
 #define DefaultAssignableNotConstructible(className)\
-NotCopyConstructible(className)\
-NotMoveConstructible(className)\
+NotCopyConstructible(className) \
+NotMoveConstructible(className) \
 DefaultCopyAndMoveAssignable(className)
     
 #else
@@ -136,11 +136,11 @@ DefaultCopyAndMoveAssignable(className)
 /*         DESTRUCTOR          */
 /*******************************/
 
-#define VIRTUAL_DESTRUCTOR_DEFINITION(className) virtual ~className();
+#define VIRTUAL_DESTRUCTOR_DECLARATION(className) virtual ~className();
 
-#define VIRTUAL_DESTRUCTOR_DECLARATION(className) virtual ~className() {}
+#define VIRTUAL_DESTRUCTOR_DEFINITION(className) virtual ~className() {}
 
-#define VIRTUAL_DESTRUCTOR(className) VIRTUAL_DESTRUCTOR_DECLARATION(className)
+#define VIRTUAL_DESTRUCTOR(className) VIRTUAL_DESTRUCTOR_DEFINITION(className)
 
 /*******************************/
 /*        CONSTRUCTOR          */
@@ -159,7 +159,7 @@ DefaultCopyAndMoveAssignable(className)
 #define DEFAULT_COPY_ASSIGNABLE(className) className& operator=(const className&) = default;
 
 #define DEFAULT_COPYABLE(className)\
-DEFAULT_COPY_CONSTRUCTIBLE(className)\
+DEFAULT_COPY_CONSTRUCTIBLE(className) \
 DEFAULT_COPY_ASSIGNABLE(className)
 
 #define NOT_COPY_CONSTRUCTIBLE(className) className(const className&) = delete;
@@ -167,7 +167,7 @@ DEFAULT_COPY_ASSIGNABLE(className)
 #define NOT_COPY_ASSIGNABLE(className) className& operator=(const className&) = delete;
 
 #define NOT_COPYABLE(className)\
-NOT_COPY_CONSTRUCTIBLE(className)\
+NOT_COPY_CONSTRUCTIBLE(className) \
 NOT_COPY_ASSIGNABLE(className)
 
 /*******************************/
@@ -179,7 +179,7 @@ NOT_COPY_ASSIGNABLE(className)
 #define DEFAULT_MOVE_ASSIGNABLE(className) className& operator=(className&&) = default;
 
 #define DEFAULT_MOVABLE(className)\
-DEFAULT_MOVE_CONSTRUCTIBLE(className)\
+DEFAULT_MOVE_CONSTRUCTIBLE(className) \
 DEFAULT_MOVE_ASSIGNABLE(className)
 
 #define NOT_MOVE_CONSTRUCTIBLE(className) className(className&&) = delete;
@@ -187,7 +187,7 @@ DEFAULT_MOVE_ASSIGNABLE(className)
 #define NOT_MOVE_ASSIGNABLE(className) className& operator=(className&&) = delete;
 
 #define NOT_MOVABLE(className)\
-NOT_MOVE_CONSTRUCTIBLE(className)\
+NOT_MOVE_CONSTRUCTIBLE(className) \
 NOT_MOVE_ASSIGNABLE(className)
 
 /*******************************/
@@ -195,37 +195,37 @@ NOT_MOVE_ASSIGNABLE(className)
 /*******************************/
 
 #define DEFAULT_COPYABLE_AND_MOVABLE(className)\
-DEFAULT_COPYABLE(className)\
+DEFAULT_COPYABLE(className) \
 DEFAULT_MOVABLE(className)
 
 #define NOT_COPYABLE_NOT_MOVABLE(className)\
-NOT_COPYABLE(className)\
+NOT_COPYABLE(className) \
 NOT_MOVABLE(className)
 
 #define DEFAULT_COPYABLE_NOT_MOVABLE(className)\
-DEFAULT_COPYABLE(className)\
+DEFAULT_COPYABLE(className) \
 NOT_MOVABLE(className)
 
 #define DEFAULT_MOVABLE_NOT_COPYABLE(className)\
-NOT_COPYABLE(className)\
+NOT_COPYABLE(className) \
 DEFAULT_MOVABLE(className)
 
 #define DEFAULT_COPY_AND_MOVE_CONSTRUCTIBLE(className)\
-DEFAULT_COPY_CONSTRUCTIBLE(className)\
+DEFAULT_COPY_CONSTRUCTIBLE(className) \
 DEFAULT_MOVE_CONSTRUCTIBLE(className)
 
 #define DEFAULT_COPY_AND_MOVE_ASSIGNABLE(className)\
-DEFAULT_COPY_ASSIGNABLE(className)\
+DEFAULT_COPY_ASSIGNABLE(className) \
 DEFAULT_MOVE_ASSIGNABLE(className)
 
 #define DEFAULT_CONSTRUCTIBLE_NOT_ASSIGNABLE(className)\
-DEFAULT_COPY_AND_MOVE_CONSTRUCTIBLE(className)\
-NOT_COPY_ASSIGNABLE(className)\
+DEFAULT_COPY_AND_MOVE_CONSTRUCTIBLE(className) \
+NOT_COPY_ASSIGNABLE(className) \
 NOT_MOVE_ASSIGNABLE(className)
 
 #define DEFAULT_ASSIGNABLE_NOT_CONSTRUCTIBLE(className)\
-NOT_COPY_CONSTRUCTIBLE(className)\
-NOT_MOVE_CONSTRUCTIBLE(className)\
+NOT_COPY_CONSTRUCTIBLE(className) \
+NOT_MOVE_CONSTRUCTIBLE(className) \
 DEFAULT_COPY_AND_MOVE_ASSIGNABLE(className)
 
 #endif
