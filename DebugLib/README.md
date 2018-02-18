@@ -10,36 +10,37 @@ Defines and implements logging interface intended to be used in debug proposes.
 	- [Compiling](#compiling)
 	- [Usage guide](#usage-guide)
 	- [Example](#example)
-		- [In code:](#in-code)
-		- [Code generated: (comments are not generated)](#code-generated-comments-are-not-generated)
+		- [In code](#in-code)
+		- [Code generated](#code-generated)
+		- [Possible output](#possible-output)
 	- [Scopes](#scopes)
 		- [Global](#global)
 		- [Outer](#outer)
 		- [Middle](#middle)
 		- [Inner](#inner)
 	- [Code generation](#code-generation)
-		- [`DEBUG_END_MESSAGE`](#debugendmessage)
-		- [`DEBUG_END_MESSAGE_AND_EVAL`](#debugendmessageandeval)
-		- [`DEBUG_END_MESSAGE_AND_EXIT`](#debugendmessageandexit)
-		- [`DEBUG_END_MESSAGE_EVAL_AND_EXIT`](#debugendmessageevalandexit)
+		- [`DEBUG_END_MESSAGE`](#debug_end_message)
+		- [`DEBUG_END_MESSAGE_AND_EVAL`](#debug_end_message_and_eval)
+		- [`DEBUG_END_MESSAGE_AND_EXIT`](#debug_end_message_and_exit)
+		- [`DEBUG_END_MESSAGE_EVAL_AND_EXIT`](#debug_end_message_eval_and_exit)
 	- [Other information](#other-information)
 		- [Standard names used in the implementation](#standard-names-used-in-the-implementation)
 		- [Features that must be removed to compile with C++98](#features-that-must-be-removed-to-compile-with-c98)
 		- [**NESTED MESSAGES ARE NOT ALLOWED!!!**](#nested-messages-are-not-allowed)
 	- [Macros that can be redefined](#macros-that-can-be-redefined)
-		- [`DEBUG_LIB_MUTEX_VAR_NAME`](#debuglibmutexvarname)
-		- [`DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME`](#debuglibloglockguargvarname)
-		- [`DEBUG_LIB_DEFAULT_LOG_LEVEL`](#debuglibdefaultloglevel)
-		- [`DEBUG_LIB_LOG_FILE_VAR_NAME`](#debugliblogfilevarname)
-		- [`DEBUG_LIB_LOG_FILE_NAME`](#debugliblogfilename)
-		- [`DEBUG_OUT`](#debugout)
-		- [`DEBUG_LIB_FLUSH`](#debuglibflush)
-		- [`DEBUG_LIB_NEXT_LINE`](#debuglibnextline)
+		- [`DEBUG_LIB_MUTEX_VAR_NAME`](#debug_lib_mutex_var_name)
+		- [`DEBUG_LIB_LOG_LOCK_GUARG_VAR_NAME`](#debug_lib_log_lock_guarg_var_name)
+		- [`DEBUG_LIB_DEFAULT_LOG_LEVEL`](#debug_lib_default_log_level)
+		- [`DEBUG_LIB_LOG_FILE_VAR_NAME`](#debug_lib_log_file_var_name)
+		- [`DEBUG_LIB_LOG_FILE_NAME`](#debug_lib_log_file_name)
+		- [`DEBUG_OUT`](#debug_out)
+		- [`DEBUG_LIB_FLUSH`](#debug_lib_flush)
+		- [`DEBUG_LIB_NEXT_LINE`](#debug_lib_next_line)
 		- [Start message macros set](#start-message-macros-set)
 		- [End message macros set](#end-message-macros-set)
 	- [Library behaviour macros](#library-behaviour-macros)
-		- [`DEBUG_LIB_THREAD_SAFETY`](#debuglibthreadsafety)
-		- [`DEBUG_LIB_FILE_LOG`](#debuglibfilelog)
+		- [`DEBUG_LIB_THREAD_SAFETY`](#debug_lib_thread_safety)
+		- [`DEBUG_LIB_FILE_LOG`](#debug_lib_file_log)
 		- [`DEBUG`](#debug)
 
 <!-- /TOC -->
@@ -83,7 +84,7 @@ All output is redirected to `DEBUG_OUT` macro using `operator<<`.
 
 To finish your message use one macro from **end message macros set**:  
 * `DEBUG_END_MESSAGE` - finish your message and send `DEBUG_LIB_FLUSH` to output stream;
-* `DEBUG_END_MESSAGE_AND_EVAL(expression)` - finish your message, send `DEBUG_LIB_FLUSH` to output stream and evaluates provided `expression` in middle scope (See: [Scopes](#scopes)). To evaluate a complex expression surround it with `{}`. If it is a one-line expression it must be ended with `;` (See: [Code generation](#code_generation)). `expression` is evaluated even when `DEBUG` macro is undefined. If an `expression` throws no actions to catch the exception will be taken;
+* `DEBUG_END_MESSAGE_AND_EVAL(expression)` - finish your message, send `DEBUG_LIB_FLUSH` to output stream and evaluates provided `expression` in middle scope (See: [Scopes](#scopes)). To evaluate a complex expression surround it with `{}`. If it is a one-line expression it must be ended with `;` (See: [Code generation](#code-generation)). `expression` is evaluated even when `DEBUG` macro is undefined. If an `expression` throws no actions to catch the exception will be taken;
 * `DEBUG_END_MESSAGE_AND_EXIT(exitcode)` - finish your message, send `DEBUG_LIB_FLUSH` to output stream and call `::std::exit((exitcode))` expression in middle scope;
 * `DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression)` - combination of `DEBUG_END_MESSAGE_AND_EVAL` and `DEBUG_END_MESSAGE_AND_EXIT`. `::std::exit((exitcode))` is called right after evaluation an `expression`.  
 
@@ -98,7 +99,8 @@ DEBUG_INFO_MESSAGE
 	DEBUG_PRINT( "This is an info message with one to four params: ", 100, " Yo!!", "Yey!!");
 DEBUG_END_MESSAGE
 ```
-### Code generated: (comments are not generated)
+### Code generated:
+Comments are not generated.  
 If `defined(DEBUG) && defined(DEBUG_LIB_THREAD_SAFETY)`:
 ```C++
 // Outer scope
@@ -146,7 +148,7 @@ If `!defined(DEBUG)`:
 } // Middle scope end
 // Outer scope
 ```
-Possible output:
+### Possible output:
 >INFO::File_name:Line_number  
 >This is an info message with one param  
 >This is an info message with two params: 100  
@@ -354,7 +356,7 @@ Includes:
 * `DEBUG_END_MESSAGE_EVAL_AND_EXIT(exitcode, expression)`  
 
 **Description**: defines the end of debug message.  
-Any macro of end message macro set may be redefined.
+Any macro of end message macro set may be redefined.  
 **Default value**: See mDebugLib.hpp code   
 **Status**: Implementation independent
 
@@ -371,7 +373,7 @@ For default implementation the `<mutex>` and `<atomic>` headers must be availabl
 
 ### `DEBUG_LIB_FILE_LOG`
 **Description**: if defined the implementation must create a file output to be used as `DEBUG_OUT`.  
-For default implementation the `<fstream>` header must be available if `defined(DEBUG_LIB_FILE_LOG)` and `<iostream>` if `!defined(DEBUG_LIB_FILE_LOG)`.
+For default implementation the `<fstream>` header must be available if `defined(DEBUG_LIB_FILE_LOG)` and `<iostream>` if `!defined(DEBUG_LIB_FILE_LOG)`.  
 **Status**: Implementation independent
 
 ### `DEBUG`
