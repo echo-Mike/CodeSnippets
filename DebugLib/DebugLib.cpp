@@ -1,4 +1,4 @@
-#include "mDebuglib.hpp"
+#include <DebugLib/mDebugLib.hpp>
 
 namespace DebugLib
 {
